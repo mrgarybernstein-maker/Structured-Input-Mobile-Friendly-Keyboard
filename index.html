@@ -2,41 +2,89 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pattern Engine Mobile-Friendly Overwrite Fixed Rev 1</title>
+<title>Pattern Engine App REV1</title>
+
 <style>
-body { font-family: Arial; padding: 20px; }
-.field { margin-bottom: 30px; }
-.label { font-weight: bold; margin-bottom: 10px; }
-.pattern-container { display: flex; align-items: center; flex-wrap: nowrap; }
-.box {
-  width: 8vw;
-  height: 10vw;
-  max-width: 40px;
-  max-height: 50px;
-  font-size: 4vw;
-  text-align: center;
-  margin: 1px;
-  padding: 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  transition: border-color 0.2s;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, Arial;
+  background: #f5f7fb;
+  padding: 15px;
 }
+
+h2 { text-align: center; }
+
+.field {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.label {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.pattern-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.box {
+  width: 42px;
+  height: 50px;
+  font-size: 20px;
+  text-align: center;
+  margin: 2px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.box:focus {
+  border-color: #007aff;
+  background: #eef5ff;
+  outline: none;
+}
+
 .box.invalid { border-color: red; }
-.literal { font-size: 4vw; margin: 1px; }
-.output { margin-top: 6px; font-size: 14px; color: #555; }
+
+.literal {
+  font-size: 20px;
+  margin: 2px;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  background: #007aff;
+  color: white;
+  font-weight: bold;
+}
 </style>
 </head>
+
 <body>
 
-<h2>Structured Input Mobile-Friendly (True Overwrite)</h2>
-<form id="demo-form">
+<h2>Structured Input</h2>
+
+<form>
   <div id="form-area"></div>
-  <input type="hidden" id="combined-value" name="combinedValue">
 </form>
+
+<button onclick="submitForm()">Submit</button>
 
 <script>
 function createPatternField(parentId, labelText, pattern) {
+
+  const storageKey = "pattern_" + labelText;
+
   const parent = document.getElementById(parentId);
+
   const field = document.createElement("div");
   field.className = "field";
 
@@ -49,37 +97,33 @@ function createPatternField(parentId, labelText, pattern) {
   container.className = "pattern-container";
   field.appendChild(container);
 
-  const output = document.createElement("div");
-  output.className = "output";
-  field.appendChild(output);
-
   parent.appendChild(field);
 
   const tokens = pattern.split("");
   const inputs = [];
-  const literals = {};
 
-  tokens.forEach((token, idx) => {
-    if (token === "A" || token === "N" || token === "X") {
+  tokens.forEach(token => {
+    if (["A","N","X"].includes(token)) {
       const input = document.createElement("input");
       input.className = "box";
       input.maxLength = 1;
 
-      // Mobile keyboard switching
-      if (token === "A") input.inputMode = "text";
-      if (token === "N") input.inputMode = "numeric";
-      if (token === "X") input.inputMode = "text";
-
-      // Pattern validation
-      if (token === "A") input.pattern = "[A-Za-z]";
-      if (token === "N") input.pattern = "[0-9]";
-      if (token === "X") input.pattern = "[A-Za-z0-9]";
+      if (token === "A") {
+        input.inputMode = "text";
+        input.pattern = "[A-Za-z]";
+      }
+      if (token === "N") {
+        input.inputMode = "numeric";
+        input.pattern = "[0-9]";
+      }
+      if (token === "X") {
+        input.inputMode = "text";
+        input.pattern = "[A-Za-z0-9]";
+      }
 
       container.appendChild(input);
       inputs.push(input);
 
-      const nextLiteral = tokens.slice(idx+1).find(t => t !== "A" && t !== "N" && t !== "X");
-      if (nextLiteral) literals[inputs.length-1] = nextLiteral;
     } else {
       const span = document.createElement("span");
       span.className = "literal";
@@ -88,19 +132,36 @@ function createPatternField(parentId, labelText, pattern) {
     }
   });
 
-  function updateOutput() {
+  function getValue() {
     let combined = "";
     container.childNodes.forEach(node => {
       if(node.tagName==="INPUT") combined += node.value;
       else combined += node.textContent;
     });
-    output.textContent = "Value: " + combined;
-    document.getElementById("combined-value").value = combined;
+    return combined;
+  }
+
+  function saveValue() {
+    localStorage.setItem(storageKey, getValue());
+  }
+
+  function loadValue() {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return;
+
+    let i = 0;
+    inputs.forEach(input => {
+      if (i < saved.length) {
+        input.value = saved[i];
+        i++;
+      }
+    });
   }
 
   inputs.forEach((input, idx) => {
+
     input.addEventListener("keydown", (e) => {
-      // Handle typing (overwrite)
+
       if (e.key.length === 1) {
         e.preventDefault();
         input.value = e.key.toUpperCase();
@@ -108,66 +169,67 @@ function createPatternField(parentId, labelText, pattern) {
         if(!input.value.match(input.pattern)) input.classList.add("invalid");
         else input.classList.remove("invalid");
 
-        if(input.value.match(input.pattern)){
-          if(literals[idx] && idx+1<inputs.length) inputs[idx+1].focus();
-          else if(idx<inputs.length-1) inputs[idx+1].focus();
-        }
+        saveValue();
 
-        updateOutput();
+        if(idx < inputs.length - 1) inputs[idx+1].focus();
       }
 
-      // Handle backspace
-      if(e.key==="Backspace"){
+      if(e.key === "Backspace"){
+        e.preventDefault();
+
         if(input.value === ""){
-          if(idx>0){
+          if(idx > 0){
             inputs[idx-1].focus();
             inputs[idx-1].value = "";
           }
         } else {
           input.value = "";
         }
-        updateOutput();
-        e.preventDefault();
+
+        saveValue();
       }
     });
 
-    // Paste support
     input.addEventListener("paste", (e)=>{
       e.preventDefault();
-      const pasteData = (e.clipboardData||window.clipboardData).getData("text").toUpperCase();
+      const pasteData = e.clipboardData.getData("text").toUpperCase();
+
       for(let i=0;i<pasteData.length && (idx+i)<inputs.length;i++){
         inputs[idx+i].value = pasteData[i];
-        if(inputs[idx+i].value.match(inputs[idx+i].pattern)) inputs[idx+i].classList.remove("invalid");
-        else inputs[idx+i].classList.add("invalid");
       }
-      const nextIdx = inputs.findIndex(b=>b.value==="");
-      if(nextIdx!==-1) inputs[nextIdx].focus();
-      updateOutput();
+
+      saveValue();
     });
   });
+
+  loadValue();
+
+  return { getValue, inputs, labelText };
 }
 
-// Create fields
-createPatternField("form-area","Date of Birth","NN-AAA-NNNN");
-createPatternField("form-area","Postal Code","ANA NAN");
-createPatternField("form-area","RAMQ","AAAA NNNN NNNN");
+// CONFIG
+const formConfig = [
+  { label: "Date of Birth", pattern: "NN-AAA-NNNN" },
+  { label: "Postal Code", pattern: "ANA NAN" },
+  { label: "RAMQ", pattern: "AAAA NNNN NNNN" }
+];
 
-// Auto-advance to next field
-setTimeout(() => {
-  const allFields = document.querySelectorAll(".field");
-  allFields.forEach((field, fieldIdx) => {
-    const inputs = field.querySelectorAll("input.box");
-    const lastInput = inputs[inputs.length-1];
-    lastInput.addEventListener("keydown", () => {
-      if(Array.from(inputs).every(i=>i.value.match(i.pattern))){
-        if(fieldIdx+1 < allFields.length){
-          const nextInputs = allFields[fieldIdx+1].querySelectorAll("input.box");
-          if(nextInputs.length>0) nextInputs[0].focus();
-        }
-      }
-    });
+const builtFields = [];
+
+formConfig.forEach(f => {
+  builtFields.push(createPatternField("form-area", f.label, f.pattern));
+});
+
+// SUBMIT
+function submitForm() {
+  let summary = "";
+
+  builtFields.forEach(field => {
+    summary += field.labelText + ": " + field.getValue() + "\n";
   });
-}, 100);
+
+  alert(summary);
+}
 </script>
 
 </body>
