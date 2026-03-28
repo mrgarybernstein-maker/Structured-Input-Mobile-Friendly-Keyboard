@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Engine Mobile-Friendly Overwrite Fixed</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+.field { margin-bottom: 30px; }
+.label { font-weight: bold; margin-bottom: 10px; }
+.pattern-container { display: flex; align-items: center; flex-wrap: nowrap; }
+.box {
+  width: 8vw;
+  height: 10vw;
+  max-width: 40px;
+  max-height: 50px;
+  font-size: 4vw;
+  text-align: center;
+  margin: 1px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+.box.invalid { border-color: red; }
+.literal { font-size: 4vw; margin: 1px; }
+.output { margin-top: 6px; font-size: 14px; color: #555; }
+</style>
+</head>
+<body>
+
+<h2>Structured Input Mobile-Friendly (True Overwrite)</h2>
+<form id="demo-form">
+  <div id="form-area"></div>
+  <input type="hidden" id="combined-value" name="combinedValue">
+</form>
+
+<script>
+function createPatternField(parentId, labelText, pattern) {
+  const parent = document.getElementById(parentId);
+  const field = document.createElement("div");
+  field.className = "field";
+
+  const label = document.createElement("div");
+  label.className = "label";
+  label.textContent = labelText + " (" + pattern + ")";
+  field.appendChild(label);
+
+  const container = document.createElement("div");
+  container.className = "pattern-container";
+  field.appendChild(container);
+
+  const output = document.createElement("div");
+  output.className = "output";
+  field.appendChild(output);
+
+  parent.appendChild(field);
+
+  const tokens = pattern.split("");
+  const inputs = [];
+  const literals = {};
+
+  tokens.forEach((token, idx) => {
+    if (token === "A" || token === "N" || token === "X") {
+      const input = document.createElement("input");
+      input.className = "box";
+      input.maxLength = 1;
+
+      // Mobile keyboard switching
+      if (token === "A") input.inputMode = "text";
+      if (token === "N") input.inputMode = "numeric";
+      if (token === "X") input.inputMode = "text";
+
+      // Pattern validation
+      if (token === "A") input.pattern = "[A-Za-z]";
+      if (token === "N") input.pattern = "[0-9]";
+      if (token === "X") input.pattern = "[A-Za-z0-9]";
+
+      container.appendChild(input);
+      inputs.push(input);
+
+      const nextLiteral = tokens.slice(idx+1).find(t => t !== "A" && t !== "N" && t !== "X");
+      if (nextLiteral) literals[inputs.length-1] = nextLiteral;
+    } else {
+      const span = document.createElement("span");
+      span.className = "literal";
+      span.textContent = token;
+      container.appendChild(span);
+    }
+  });
+
+  function updateOutput() {
+    let combined = "";
+    container.childNodes.forEach(node => {
+      if(node.tagName==="INPUT") combined += node.value;
+      else combined += node.textContent;
+    });
+    output.textContent = "Value: " + combined;
+    document.getElementById("combined-value").value = combined;
+  }
+
+  inputs.forEach((input, idx) => {
+    input.addEventListener("keydown", (e) => {
+      // Handle typing (overwrite)
+      if (e.key.length === 1) {
+        e.preventDefault();
+        input.value = e.key.toUpperCase();
+
+        if(!input.value.match(input.pattern)) input.classList.add("invalid");
+        else input.classList.remove("invalid");
+
+        if(input.value.match(input.pattern)){
+          if(literals[idx] && idx+1<inputs.length) inputs[idx+1].focus();
+          else if(idx<inputs.length-1) inputs[idx+1].focus();
+        }
+
+        updateOutput();
+      }
+
+      // Handle backspace
+      if(e.key==="Backspace"){
+        if(input.value === ""){
+          if(idx>0){
+            inputs[idx-1].focus();
+            inputs[idx-1].value = "";
+          }
+        } else {
+          input.value = "";
+        }
+        updateOutput();
+        e.preventDefault();
+      }
+    });
+
+    // Paste support
+    input.addEventListener("paste", (e)=>{
+      e.preventDefault();
+      const pasteData = (e.clipboardData||window.clipboardData).getData("text").toUpperCase();
+      for(let i=0;i<pasteData.length && (idx+i)<inputs.length;i++){
+        inputs[idx+i].value = pasteData[i];
+        if(inputs[idx+i].value.match(inputs[idx+i].pattern)) inputs[idx+i].classList.remove("invalid");
+        else inputs[idx+i].classList.add("invalid");
+      }
+      const nextIdx = inputs.findIndex(b=>b.value==="");
+      if(nextIdx!==-1) inputs[nextIdx].focus();
+      updateOutput();
+    });
+  });
+}
+
+// Create fields
+createPatternField("form-area","Date of Birth","NN-AAA-NNNN");
+createPatternField("form-area","Postal Code","ANA NAN");
+createPatternField("form-area","RAMQ","AAAA NNNN NNNN");
+
+// Auto-advance to next field
+setTimeout(() => {
+  const allFields = document.querySelectorAll(".field");
+  allFields.forEach((field, fieldIdx) => {
+    const inputs = field.querySelectorAll("input.box");
+    const lastInput = inputs[inputs.length-1];
+    lastInput.addEventListener("keydown", () => {
+      if(Array.from(inputs).every(i=>i.value.match(i.pattern))){
+        if(fieldIdx+1 < allFields.length){
+          const nextInputs = allFields[fieldIdx+1].querySelectorAll("input.box");
+          if(nextInputs.length>0) nextInputs[0].focus();
+        }
+      }
+    });
+  });
+}, 100);
+</script>
+
+</body>
+</html>
