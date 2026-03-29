@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pattern Engine App REV1</title>
+<title>Pattern Engine App</title>
 
 <style>
 body {
@@ -48,7 +48,9 @@ h2 { text-align: center; }
   outline: none;
 }
 
-.box.invalid { border-color: red; }
+.box.invalid {
+  border-color: red;
+}
 
 .literal {
   font-size: 20px;
@@ -162,18 +164,26 @@ function createPatternField(parentId, labelText, pattern) {
 
     input.addEventListener("keydown", (e) => {
 
+      // CHARACTER ENTRY (desktop + mobile safe)
       if (e.key.length === 1) {
         e.preventDefault();
-        input.value = e.key.toUpperCase();
+        const char = e.key.toUpperCase();
 
-        if(!input.value.match(input.pattern)) input.classList.add("invalid");
-        else input.classList.remove("invalid");
+        if (char.match(input.pattern)) {
+          input.value = char;
+          input.classList.remove("invalid");
 
-        saveValue();
+          saveValue();
 
-        if(idx < inputs.length - 1) inputs[idx+1].focus();
+          if(idx < inputs.length - 1) {
+            inputs[idx+1].focus();
+          }
+        } else {
+          input.classList.add("invalid");
+        }
       }
 
+      // BACKSPACE
       if(e.key === "Backspace"){
         e.preventDefault();
 
@@ -190,12 +200,20 @@ function createPatternField(parentId, labelText, pattern) {
       }
     });
 
+    // PASTE SUPPORT
     input.addEventListener("paste", (e)=>{
       e.preventDefault();
       const pasteData = e.clipboardData.getData("text").toUpperCase();
 
       for(let i=0;i<pasteData.length && (idx+i)<inputs.length;i++){
-        inputs[idx+i].value = pasteData[i];
+        const char = pasteData[i];
+
+        if (char.match(inputs[idx+i].pattern)) {
+          inputs[idx+i].value = char;
+          inputs[idx+i].classList.remove("invalid");
+        } else {
+          inputs[idx+i].classList.add("invalid");
+        }
       }
 
       saveValue();
@@ -222,11 +240,26 @@ formConfig.forEach(f => {
 
 // SUBMIT
 function submitForm() {
-  let summary = "";
+  let allValid = true;
+  let summary = "Submitted:\n\n";
 
   builtFields.forEach(field => {
-    summary += field.labelText + ": " + field.getValue() + "\n";
+    const value = field.getValue();
+
+    field.inputs.forEach(input => {
+      if (!input.value.match(input.pattern)) {
+        input.classList.add("invalid");
+        allValid = false;
+      }
+    });
+
+    summary += field.labelText + ": " + value + "\n";
   });
+
+  if (!allValid) {
+    alert("Please fix invalid fields");
+    return;
+  }
 
   alert(summary);
 }
