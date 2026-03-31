@@ -35,10 +35,10 @@ body { font-family: Arial; padding: 20px; }
   left: 0;
   width: 32px;
   height: 40px;
-  text-align: center;
   line-height: 40px;
-  font-size: 18px;
+  text-align: center;
   color: #bbb;
+  font-size: 18px;
   z-index: 1;
   pointer-events: none;
 }
@@ -96,12 +96,12 @@ document.addEventListener("DOMContentLoaded", function() {
       localStorage.setItem(storageKey, getValue());
     }
 
-    function loadGhost() {
+    function loadGhosts() {
       const val = localStorage.getItem(storageKey);
       if (!val) return;
 
-      for (let i = 0; i < ghosts.length && i < val.length; i++) {
-        ghosts[i].textContent = val[i];
+      for (let i = 0; i < ghosts.length; i++) {
+        ghosts[i].textContent = val[i] || "";
       }
     }
 
@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function() {
     inputs.forEach((input, idx) => {
 
       input.addEventListener("focus", () => {
-        loadGhost();
+        loadGhosts();   // 👈 SHOW ghost on tap
       });
 
       input.addEventListener("keydown", (e) => {
@@ -198,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     });
 
-    return { inputs, getValue, labelText };
+    return { inputs, getValue, labelText, clearGhosts };
   }
 
   const parent = document.getElementById("form-area");
@@ -217,10 +217,10 @@ document.addEventListener("DOMContentLoaded", function() {
       output += f.labelText + ": " + f.getValue() + "\\n";
     });
 
-    alert(output);
     console.log(output);
+    alert(output);
 
-    clearForm();
+    clearForm(); // 👈 clear after submit
   };
 
   window.clearForm = function() {
@@ -233,6 +233,8 @@ document.addEventListener("DOMContentLoaded", function() {
         input.value = "";
         input.classList.remove("invalid");
       });
+
+      f.clearGhosts();
 
       localStorage.removeItem(storageKey);
     });
