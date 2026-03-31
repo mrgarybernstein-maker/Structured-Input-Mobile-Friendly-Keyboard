@@ -44,6 +44,19 @@ document.addEventListener("DOMContentLoaded", function() {
       localStorage.setItem(storageKey, getValue());
     }
 
+    function loadValue() {
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) return;
+
+      let i = 0;
+      inputs.forEach(input => {
+        if (i < saved.length) {
+          input.value = saved[i];
+          i++;
+        }
+      });
+    }
+
     function fillFromString(str) {
       let i = 0;
       inputs.forEach(input => {
@@ -97,7 +110,6 @@ document.addEventListener("DOMContentLoaded", function() {
           input.pattern = "[A-Za-z0-9]";
         }
 
-        // Show dropdown on tap/focus
         input.addEventListener("focus", showDropdown);
 
         container.appendChild(input);
@@ -115,7 +127,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
       input.addEventListener("keydown", (e) => {
 
-        // CHARACTER INPUT
         if (e.key.length === 1) {
           e.preventDefault();
           const char = e.key.toUpperCase();
@@ -138,7 +149,6 @@ document.addEventListener("DOMContentLoaded", function() {
           }
         }
 
-        // BACKSPACE
         if (e.key === "Backspace") {
           e.preventDefault();
 
@@ -155,7 +165,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       });
 
-      // PASTE
       input.addEventListener("paste", (e) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData("text").toUpperCase();
@@ -176,17 +185,16 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     });
 
-    // CLICK OUTSIDE closes dropdown
+    // LOAD SAVED VALUE ON START
+    loadValue();
+
     document.addEventListener("click", (e) => {
-      if (!field.contains(e.target)) {
-        hideDropdown();
-      }
+      if (!field.contains(e.target)) hideDropdown();
     });
 
     return { getValue, inputs, labelText };
   }
 
-  // CONFIG
   const formConfig = [
     { label: "Date of Birth", pattern: "NN-AAA-NNNN" },
     { label: "Postal Code", pattern: "ANA NAN" },
@@ -200,11 +208,13 @@ document.addEventListener("DOMContentLoaded", function() {
     if (field) builtFields.push(field);
   });
 
-  // SUBMIT
+  // SUBMIT WITH REPORTING
   window.submitForm = function() {
     let allValid = true;
+    let summary = "Submitted:\n\n";
 
     builtFields.forEach(field => {
+      const value = field.getValue();
       let fieldValid = true;
 
       field.inputs.forEach(input => {
@@ -223,21 +233,18 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!fieldValid) fieldDiv.classList.add("invalid-field");
         else fieldDiv.classList.remove("invalid-field");
       }
+
+      summary += field.labelText + ": " + value + "\n";
     });
 
-    const msg = document.getElementById("success-message");
+    if (!allValid) return;
 
-    if (!allValid) {
-      if (msg) msg.style.display = "none";
-      return;
-    }
-
-    if (msg) msg.style.display = "block";
+    console.log(summary); // 👉 visible in DevTools
+    alert(summary);       // 👉 optional (remove if you want)
 
     resetForm();
   };
 
-  // RESET
   window.resetForm = function() {
     builtFields.forEach(field => {
       const storageKey = "pattern_" + field.labelText;
