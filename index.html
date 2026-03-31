@@ -2,7 +2,6 @@
 function createPatternField(parentId, labelText, pattern) {
 
   const storageKey = "pattern_" + labelText;
-
   const parent = document.getElementById(parentId);
 
   const field = document.createElement("div");
@@ -55,7 +54,7 @@ function createPatternField(parentId, labelText, pattern) {
   function getValue() {
     let combined = "";
     container.childNodes.forEach(node => {
-      if(node.tagName==="INPUT") combined += node.value;
+      if (node.tagName === "INPUT") combined += node.value;
       else combined += node.textContent;
     });
     return combined;
@@ -82,7 +81,7 @@ function createPatternField(parentId, labelText, pattern) {
 
     input.addEventListener("keydown", (e) => {
 
-      // CHARACTER ENTRY
+      // CHARACTER ENTRY (overwrite mode)
       if (e.key.length === 1) {
         e.preventDefault();
         const char = e.key.toUpperCase();
@@ -97,22 +96,22 @@ function createPatternField(parentId, labelText, pattern) {
 
           saveValue();
 
-          if(idx < inputs.length - 1) {
-            inputs[idx+1].focus();
+          if (idx < inputs.length - 1) {
+            inputs[idx + 1].focus();
           }
         } else {
           input.classList.add("invalid");
         }
       }
 
-      // BACKSPACE
-      if(e.key === "Backspace"){
+      // BACKSPACE navigation
+      if (e.key === "Backspace") {
         e.preventDefault();
 
-        if(input.value === ""){
-          if(idx > 0){
-            inputs[idx-1].focus();
-            inputs[idx-1].value = "";
+        if (input.value === "") {
+          if (idx > 0) {
+            inputs[idx - 1].focus();
+            inputs[idx - 1].value = "";
           }
         } else {
           input.value = "";
@@ -122,23 +121,22 @@ function createPatternField(parentId, labelText, pattern) {
       }
     });
 
-    // PASTE SUPPORT
-    input.addEventListener("paste", (e)=>{
+    // PASTE support
+    input.addEventListener("paste", (e) => {
       e.preventDefault();
       const pasteData = e.clipboardData.getData("text").toUpperCase();
 
-      for(let i=0;i<pasteData.length && (idx+i)<inputs.length;i++){
+      for (let i = 0; i < pasteData.length && (idx + i) < inputs.length; i++) {
         const char = pasteData[i];
 
-        if (char.match(inputs[idx+i].pattern)) {
-          inputs[idx+i].value = char;
-          inputs[idx+i].classList.remove("invalid");
+        if (char.match(inputs[idx + i].pattern)) {
+          inputs[idx + i].value = char;
+          inputs[idx + i].classList.remove("invalid");
         } else {
-          inputs[idx+i].classList.add("invalid");
+          inputs[idx + i].classList.add("invalid");
         }
       }
 
-      // clear field error on paste
       const fieldDiv = input.closest(".field");
       fieldDiv.classList.remove("invalid-field");
 
@@ -151,7 +149,7 @@ function createPatternField(parentId, labelText, pattern) {
   return { getValue, inputs, labelText };
 }
 
-// CONFIG
+// FORM CONFIG
 const formConfig = [
   { label: "Date of Birth", pattern: "NN-AAA-NNNN" },
   { label: "Postal Code", pattern: "ANA NAN" },
@@ -164,13 +162,11 @@ formConfig.forEach(f => {
   builtFields.push(createPatternField("form-area", f.label, f.pattern));
 });
 
-// SUBMIT
+// SUBMIT (with success banner)
 function submitForm() {
   let allValid = true;
-  let summary = "Submitted:\n\n";
 
   builtFields.forEach(field => {
-    const value = field.getValue();
     let fieldValid = true;
 
     field.inputs.forEach(input => {
@@ -190,19 +186,23 @@ function submitForm() {
     } else {
       fieldDiv.classList.remove("invalid-field");
     }
-
-    summary += field.labelText + ": " + value + "\n";
   });
 
   if (!allValid) {
-    alert("Please fix highlighted fields");
+    document.getElementById("success-message").style.display = "none";
     return;
   }
 
-  // SHOW RESULT
-  alert(summary);
+  // Show success banner
+  const msg = document.getElementById("success-message");
+  msg.style.display = "block";
 
-  // CLEAR FORM + STORAGE
+  // Clear form
+  resetForm();
+}
+
+// RESET FUNCTION
+function resetForm() {
   builtFields.forEach(field => {
     const storageKey = "pattern_" + field.labelText;
 
@@ -217,7 +217,6 @@ function submitForm() {
     localStorage.removeItem(storageKey);
   });
 
-  // Focus first field
   if (builtFields.length > 0) {
     builtFields[0].inputs[0].focus();
   }
