@@ -6,13 +6,17 @@
 
 <style>
 body { font-family: Arial; padding: 20px; }
-.field { margin-bottom: 25px; position: relative; }
+
+.field { margin-bottom: 25px; }
 .label { font-weight: bold; margin-bottom: 8px; }
 
 .pattern-container {
   display: flex;
   gap: 4px;
-  flex-wrap: nowrap;
+}
+
+.box-wrapper {
+  position: relative;
 }
 
 .box {
@@ -20,6 +24,23 @@ body { font-family: Arial; padding: 20px; }
   height: 40px;
   text-align: center;
   font-size: 18px;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+.ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  font-size: 18px;
+  color: #bbb;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .literal {
@@ -27,22 +48,10 @@ body { font-family: Arial; padding: 20px; }
 }
 
 .invalid { border: 2px solid red; }
-.invalid-field { background: #ffe6e6; }
 
-.dropdown {
-  position: absolute;
-  top: 65px;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  display: none;
-  z-index: 10;
-}
-
-.dropdown-item {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+button {
+  margin-right: 10px;
+  padding: 10px 15px;
 }
 </style>
 </head>
@@ -53,6 +62,7 @@ body { font-family: Arial; padding: 20px; }
 
 <br>
 <button onclick="submitForm()">Submit</button>
+<button onclick="clearForm()">Clear</button>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -73,13 +83,10 @@ document.addEventListener("DOMContentLoaded", function() {
     container.className = "pattern-container";
     field.appendChild(container);
 
-    const dropdown = document.createElement("div");
-    dropdown.className = "dropdown";
-    field.appendChild(dropdown);
-
     parent.appendChild(field);
 
     const inputs = [];
+    const ghosts = [];
 
     function getValue() {
       return inputs.map(i => i.value).join("");
@@ -89,43 +96,28 @@ document.addEventListener("DOMContentLoaded", function() {
       localStorage.setItem(storageKey, getValue());
     }
 
-    function load() {
+    function loadGhost() {
       const val = localStorage.getItem(storageKey);
       if (!val) return;
 
-      for (let i = 0; i < inputs.length && i < val.length; i++) {
-        inputs[i].value = val[i];
+      for (let i = 0; i < ghosts.length && i < val.length; i++) {
+        ghosts[i].textContent = val[i];
       }
     }
 
-    function showDropdown() {
-      const val = localStorage.getItem(storageKey);
-      if (!val) return;
-
-      dropdown.innerHTML = "";
-
-      const item = document.createElement("div");
-      item.className = "dropdown-item";
-      item.textContent = val;
-
-      item.onclick = () => {
-        for (let i = 0; i < inputs.length && i < val.length; i++) {
-          inputs[i].value = val[i];
-        }
-        dropdown.style.display = "none";
-      };
-
-      dropdown.appendChild(item);
-      dropdown.style.display = "block";
-    }
-
-    function hideDropdown() {
-      dropdown.style.display = "none";
+    function clearGhosts() {
+      ghosts.forEach(g => g.textContent = "");
     }
 
     pattern.split("").forEach(token => {
 
       if (token === "A" || token === "N" || token === "X") {
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "box-wrapper";
+
+        const ghost = document.createElement("div");
+        ghost.className = "ghost";
 
         const input = document.createElement("input");
         input.className = "box";
@@ -135,10 +127,12 @@ document.addEventListener("DOMContentLoaded", function() {
         if (token === "N") input.pattern = "[0-9]";
         if (token === "X") input.pattern = "[A-Za-z0-9]";
 
-        input.addEventListener("focus", showDropdown);
+        wrapper.appendChild(ghost);
+        wrapper.appendChild(input);
+        container.appendChild(wrapper);
 
-        container.appendChild(input);
         inputs.push(input);
+        ghosts.push(ghost);
 
       } else {
         const span = document.createElement("span");
@@ -150,6 +144,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     inputs.forEach((input, idx) => {
 
+      input.addEventListener("focus", () => {
+        loadGhost();
+      });
+
       input.addEventListener("keydown", (e) => {
 
         if (e.key.length === 1) {
@@ -157,14 +155,17 @@ document.addEventListener("DOMContentLoaded", function() {
           const char = e.key.toUpperCase();
 
           if (char.match(input.pattern)) {
+
             input.value = char;
+            ghosts[idx].textContent = "";
             input.classList.remove("invalid");
+
             save();
-            hideDropdown();
 
             if (idx < inputs.length - 1) {
               inputs[idx + 1].focus();
             }
+
           } else {
             input.classList.add("invalid");
           }
@@ -190,17 +191,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
         for (let i = 0; i < text.length && (idx + i) < inputs.length; i++) {
           inputs[idx + i].value = text[i];
+          ghosts[idx + i].textContent = "";
         }
 
         save();
-        hideDropdown();
       });
-    });
-
-    load();
-
-    document.addEventListener("click", (e) => {
-      if (!field.contains(e.target)) hideDropdown();
     });
 
     return { inputs, getValue, labelText };
@@ -219,12 +214,28 @@ document.addEventListener("DOMContentLoaded", function() {
     let output = "";
 
     fields.forEach(f => {
-      const val = f.getValue();
-      output += f.labelText + ": " + val + "\\n";
+      output += f.labelText + ": " + f.getValue() + "\\n";
     });
 
-    console.log(output);
     alert(output);
+    console.log(output);
+
+    clearForm();
+  };
+
+  window.clearForm = function() {
+
+    fields.forEach(f => {
+
+      const storageKey = "pattern_" + f.labelText;
+
+      f.inputs.forEach(input => {
+        input.value = "";
+        input.classList.remove("invalid");
+      });
+
+      localStorage.removeItem(storageKey);
+    });
   };
 
 });
