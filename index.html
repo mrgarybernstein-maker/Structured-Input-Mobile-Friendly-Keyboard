@@ -1,3 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Engine</title>
+
+<style>
+body {
+  font-family: Arial;
+  padding: 20px;
+}
+
+.field {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.field.invalid-field {
+  background: #ffecec;
+  border: 1px solid red;
+}
+
+.label {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.pattern-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.box {
+  width: 28px;
+  height: 40px;
+  text-align: center;
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+.box.invalid {
+  border-color: red;
+  background: #fff0f0;
+}
+
+.literal {
+  margin: 0 4px;
+  font-size: 18px;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #007bff;
+  color: white;
+  font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="success-message" style="
+  display:none;
+  background:#e6ffed;
+  color:#1a7f37;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:15px;
+  text-align:center;
+  font-weight:bold;
+">
+  ✅ Form submitted successfully
+</div>
+
+<div id="form-area"></div>
+
+<button type="button" onclick="submitForm()">Submit</button>
+<button type="button" onclick="resetForm()" style="margin-left:10px;">Reset</button>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -5,11 +90,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const storageKey = "pattern_" + labelText;
     const parent = document.getElementById(parentId);
-
-    if (!parent) {
-      console.error("Missing element:", parentId);
-      return null;
-    }
 
     const field = document.createElement("div");
     field.className = "field";
@@ -71,24 +151,10 @@ document.addEventListener("DOMContentLoaded", function() {
       localStorage.setItem(storageKey, getValue());
     }
 
-    function loadValue() {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return;
-
-      let i = 0;
-      inputs.forEach(input => {
-        if (i < saved.length) {
-          input.value = saved[i];
-          i++;
-        }
-      });
-    }
-
     inputs.forEach((input, idx) => {
 
       input.addEventListener("keydown", (e) => {
 
-        // CHARACTER INPUT
         if (e.key.length === 1) {
           e.preventDefault();
           const char = e.key.toUpperCase();
@@ -110,7 +176,6 @@ document.addEventListener("DOMContentLoaded", function() {
           }
         }
 
-        // BACKSPACE
         if (e.key === "Backspace") {
           e.preventDefault();
 
@@ -127,7 +192,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       });
 
-      // PASTE SUPPORT
       input.addEventListener("paste", (e) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData("text").toUpperCase();
@@ -150,12 +214,9 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     });
 
-    loadValue();
-
     return { getValue, inputs, labelText };
   }
 
-  // CONFIG
   const formConfig = [
     { label: "Date of Birth", pattern: "NN-AAA-NNNN" },
     { label: "Postal Code", pattern: "ANA NAN" },
@@ -165,11 +226,9 @@ document.addEventListener("DOMContentLoaded", function() {
   const builtFields = [];
 
   formConfig.forEach(f => {
-    const field = createPatternField("form-area", f.label, f.pattern);
-    if (field) builtFields.push(field);
+    builtFields.push(createPatternField("form-area", f.label, f.pattern));
   });
 
-  // SUBMIT
   window.submitForm = function() {
     let allValid = true;
 
@@ -206,7 +265,6 @@ document.addEventListener("DOMContentLoaded", function() {
     resetForm();
   };
 
-  // RESET
   window.resetForm = function() {
     builtFields.forEach(field => {
       const storageKey = "pattern_" + field.labelText;
@@ -229,3 +287,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 });
 </script>
+
+</body>
+</html>
