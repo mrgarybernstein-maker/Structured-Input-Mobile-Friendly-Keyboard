@@ -1,85 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Input</title>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+.field { margin-bottom: 25px; position: relative; }
+.label { font-weight: bold; margin-bottom: 8px; }
+
+.pattern-container {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.box {
+  width: 32px;
+  height: 40px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.literal {
+  padding: 10px 4px;
+}
+
+.invalid { border: 2px solid red; }
+.invalid-field { background: #ffe6e6; }
+
+.dropdown {
+  position: absolute;
+  top: 65px;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  display: none;
+  z-index: 10;
+}
+
+.dropdown-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+</style>
+</head>
+
+<body>
+
+<div id="form-area"></div>
+
+<br>
+<button onclick="submitForm()">Submit</button>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-  function createPatternField(parentId, labelText, pattern) {
+  function createField(parent, labelText, pattern) {
 
     const storageKey = "pattern_" + labelText;
-    const parent = document.getElementById(parentId);
-    if (!parent) return;
 
     const field = document.createElement("div");
     field.className = "field";
-    field.style.position = "relative";
 
     const label = document.createElement("div");
     label.className = "label";
-    label.textContent = labelText + " (" + pattern + ")";
+    label.textContent = labelText;
     field.appendChild(label);
 
     const container = document.createElement("div");
     container.className = "pattern-container";
     field.appendChild(container);
 
-    parent.appendChild(field);
-
-    const tokens = pattern.split("");
-    const inputs = [];
-
-    // DROPDOWN
     const dropdown = document.createElement("div");
     dropdown.className = "dropdown";
-    dropdown.style.display = "none";
     field.appendChild(dropdown);
 
+    parent.appendChild(field);
+
+    const inputs = [];
+
     function getValue() {
-      let combined = "";
-      container.childNodes.forEach(node => {
-        if (node.tagName === "INPUT") combined += node.value;
-        else combined += node.textContent;
-      });
-      return combined;
+      return inputs.map(i => i.value).join("");
     }
 
-    function saveValue() {
+    function save() {
       localStorage.setItem(storageKey, getValue());
     }
 
-    function loadValue() {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return;
+    function load() {
+      const val = localStorage.getItem(storageKey);
+      if (!val) return;
 
-      let i = 0;
-      inputs.forEach(input => {
-        if (i < saved.length) {
-          input.value = saved[i];
-          i++;
-        }
-      });
-    }
-
-    function fillFromString(str) {
-      let i = 0;
-      inputs.forEach(input => {
-        if (i < str.length) {
-          input.value = str[i];
-          input.classList.remove("invalid");
-          i++;
-        }
-      });
+      for (let i = 0; i < inputs.length && i < val.length; i++) {
+        inputs[i].value = val[i];
+      }
     }
 
     function showDropdown() {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return;
+      const val = localStorage.getItem(storageKey);
+      if (!val) return;
 
       dropdown.innerHTML = "";
 
       const item = document.createElement("div");
       item.className = "dropdown-item";
-      item.textContent = saved;
+      item.textContent = val;
 
       item.onclick = () => {
-        fillFromString(saved);
+        for (let i = 0; i < inputs.length && i < val.length; i++) {
+          inputs[i].value = val[i];
+        }
         dropdown.style.display = "none";
       };
 
@@ -91,24 +123,17 @@ document.addEventListener("DOMContentLoaded", function() {
       dropdown.style.display = "none";
     }
 
-    tokens.forEach(token => {
-      if (["A","N","X"].includes(token)) {
+    pattern.split("").forEach(token => {
+
+      if (token === "A" || token === "N" || token === "X") {
+
         const input = document.createElement("input");
         input.className = "box";
         input.maxLength = 1;
 
-        if (token === "A") {
-          input.inputMode = "text";
-          input.pattern = "[A-Za-z]";
-        }
-        if (token === "N") {
-          input.inputMode = "numeric";
-          input.pattern = "[0-9]";
-        }
-        if (token === "X") {
-          input.inputMode = "text";
-          input.pattern = "[A-Za-z0-9]";
-        }
+        if (token === "A") input.pattern = "[A-Za-z]";
+        if (token === "N") input.pattern = "[0-9]";
+        if (token === "X") input.pattern = "[A-Za-z0-9]";
 
         input.addEventListener("focus", showDropdown);
 
@@ -134,11 +159,7 @@ document.addEventListener("DOMContentLoaded", function() {
           if (char.match(input.pattern)) {
             input.value = char;
             input.classList.remove("invalid");
-
-            const fieldDiv = input.closest(".field");
-            if (fieldDiv) fieldDiv.classList.remove("invalid-field");
-
-            saveValue();
+            save();
             hideDropdown();
 
             if (idx < inputs.length - 1) {
@@ -152,118 +173,62 @@ document.addEventListener("DOMContentLoaded", function() {
         if (e.key === "Backspace") {
           e.preventDefault();
 
-          if (input.value === "") {
-            if (idx > 0) {
-              inputs[idx - 1].focus();
-              inputs[idx - 1].value = "";
-            }
+          if (input.value === "" && idx > 0) {
+            inputs[idx - 1].focus();
+            inputs[idx - 1].value = "";
           } else {
             input.value = "";
           }
 
-          saveValue();
+          save();
         }
       });
 
       input.addEventListener("paste", (e) => {
         e.preventDefault();
-        const pasteData = e.clipboardData.getData("text").toUpperCase();
+        const text = e.clipboardData.getData("text").toUpperCase();
 
-        for (let i = 0; i < pasteData.length && (idx + i) < inputs.length; i++) {
-          const char = pasteData[i];
-
-          if (char.match(inputs[idx + i].pattern)) {
-            inputs[idx + i].value = char;
-            inputs[idx + i].classList.remove("invalid");
-          } else {
-            inputs[idx + i].classList.add("invalid");
-          }
+        for (let i = 0; i < text.length && (idx + i) < inputs.length; i++) {
+          inputs[idx + i].value = text[i];
         }
 
+        save();
         hideDropdown();
-        saveValue();
       });
     });
 
-    // LOAD SAVED VALUE ON START
-    loadValue();
+    load();
 
     document.addEventListener("click", (e) => {
       if (!field.contains(e.target)) hideDropdown();
     });
 
-    return { getValue, inputs, labelText };
+    return { inputs, getValue, labelText };
   }
 
-  const formConfig = [
-    { label: "Date of Birth", pattern: "NN-AAA-NNNN" },
-    { label: "Postal Code", pattern: "ANA NAN" },
-    { label: "RAMQ", pattern: "AAAA NNNN NNNN" }
+  const parent = document.getElementById("form-area");
+
+  const fields = [
+    createField(parent, "Date of Birth", "NN-AAA-NNNN"),
+    createField(parent, "Postal Code", "ANA NAN"),
+    createField(parent, "RAMQ", "AAAA NNNN NNNN")
   ];
 
-  const builtFields = [];
-
-  formConfig.forEach(f => {
-    const field = createPatternField("form-area", f.label, f.pattern);
-    if (field) builtFields.push(field);
-  });
-
-  // SUBMIT WITH REPORTING
   window.submitForm = function() {
-    let allValid = true;
-    let summary = "Submitted:\n\n";
 
-    builtFields.forEach(field => {
-      const value = field.getValue();
-      let fieldValid = true;
+    let output = "";
 
-      field.inputs.forEach(input => {
-        if (!input.value.match(input.pattern)) {
-          input.classList.add("invalid");
-          fieldValid = false;
-          allValid = false;
-        } else {
-          input.classList.remove("invalid");
-        }
-      });
-
-      const fieldDiv = field.inputs[0].closest(".field");
-
-      if (fieldDiv) {
-        if (!fieldValid) fieldDiv.classList.add("invalid-field");
-        else fieldDiv.classList.remove("invalid-field");
-      }
-
-      summary += field.labelText + ": " + value + "\n";
+    fields.forEach(f => {
+      const val = f.getValue();
+      output += f.labelText + ": " + val + "\\n";
     });
 
-    if (!allValid) return;
-
-    console.log(summary); // 👉 visible in DevTools
-    alert(summary);       // 👉 optional (remove if you want)
-
-    resetForm();
-  };
-
-  window.resetForm = function() {
-    builtFields.forEach(field => {
-      const storageKey = "pattern_" + field.labelText;
-
-      field.inputs.forEach(input => {
-        input.value = "";
-        input.classList.remove("invalid");
-      });
-
-      const fieldDiv = field.inputs[0].closest(".field");
-      if (fieldDiv) fieldDiv.classList.remove("invalid-field");
-
-      localStorage.removeItem(storageKey);
-    });
-
-    if (builtFields.length > 0) {
-      builtFields[0].inputs[0].focus();
-    }
+    console.log(output);
+    alert(output);
   };
 
 });
 </script>
+
+</body>
+</html>
