@@ -2,21 +2,18 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine</title>
+<title>Pro Input Engine v2</title>
 <style>
 body { font-family: Arial; padding: 20px; }
 .field { margin-bottom: 25px; }
-.label { font-weight: bold; margin-bottom: 8px; }
-.box-container { display: flex; gap: 4px; flex-wrap: wrap; }
-.box { 
-  width: 32px; height: 40px; 
-  border: 1px solid #ccc; text-align: center; 
-  font-size: 18px; line-height: 40px;
-  user-select: none;
+.label { font-weight: bold; margin-bottom: 8px; display: block; }
+input { 
+  font-size: 18px; padding: 6px; width: 150px; 
+  margin-right: 8px; border: 1px solid #ccc; border-radius: 4px;
 }
-.invalid { background-color: #ffd6d6; }
+input.invalid { border-color: red; background: #ffd6d6; }
 .saved-values { margin-top: 6px; font-size: 13px; }
-.saved-label { color: #666; margin-bottom: 3px; }
+.saved-label { color: #666; margin-bottom: 3px; display: block; }
 .saved-chip {
   display: inline-block;
   padding: 6px 10px;
@@ -26,185 +23,125 @@ body { font-family: Arial; padding: 20px; }
   cursor: pointer;
 }
 button { margin-right: 10px; padding: 10px 15px; }
-.hidden-input { 
-  position: absolute; opacity: 0; width: 1px; height: 1px; 
-}
 </style>
 </head>
 <body>
 
-<div id="form-area"></div>
+<div class="field">
+  <label class="label" for="dob">Date of Birth (NN-AAA-NNNN)</label>
+  <input id="dob" type="text" autocomplete="bday" inputmode="numeric" maxlength="9" placeholder="DD-MMM-YYYY">
+  <div id="dob-saved" class="saved-values"></div>
+</div>
+
+<div class="field">
+  <label class="label" for="postal">Postal Code (ANA NAN)</label>
+  <input id="postal" type="text" autocomplete="postal-code" inputmode="text" maxlength="7" placeholder="H0H 0H0">
+  <div id="postal-saved" class="saved-values"></div>
+</div>
+
+<div class="field">
+  <label class="label" for="ramq">RAMQ (AAAA NNNN NNNN)</label>
+  <input id="ramq" type="text" autocomplete="off" inputmode="text" maxlength="13" placeholder="AAAA NNNN NNNN">
+  <div id="ramq-saved" class="saved-values"></div>
+</div>
 
 <br>
-<button onclick="submitForm()">Submit</button>
-<button onclick="clearForm()">Clear</button>
+<button id="submit-btn">Submit</button>
+<button id="clear-btn">Clear</button>
 
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+function initField(id, storageKey, validator) {
+  const input = document.getElementById(id);
+  const savedContainer = document.getElementById(id + '-saved');
 
-  const formArea = document.getElementById("form-area");
-
-  function createProField(labelText, pattern) {
-    const storageKey = "pattern_" + labelText;
-    const field = document.createElement("div");
-    field.className = "field";
-
-    const label = document.createElement("div");
-    label.className = "label";
-    label.textContent = labelText;
-    field.appendChild(label);
-
-    const container = document.createElement("div");
-    container.className = "box-container";
-    field.appendChild(container);
-
-    const savedContainer = document.createElement("div");
-    savedContainer.className = "saved-values";
-    field.appendChild(savedContainer);
-
-    formArea.appendChild(field);
-
-    const boxes = [];
-    const tokens = pattern.split("").filter(t => t==="A"||t==="N"||t==="X");
-
-    pattern.split("").forEach(token => {
-      if (token==="A"||token==="N"||token==="X") {
-        const box = document.createElement("div");
-        box.className = "box";
-        container.appendChild(box);
-        boxes.push(box);
-      } else {
-        const literal = document.createElement("div");
-        literal.className = "box";
-        literal.textContent = token;
-        literal.style.border = "none";
-        container.appendChild(literal);
-      }
-    });
-
-    const input = document.createElement("input");
-    input.className = "hidden-input";
-    input.setAttribute("autocomplete", "off");
-    input.setAttribute("autocorrect", "off");
-    input.setAttribute("autocapitalize", "characters");
-    input.setAttribute("spellcheck", "false");
-    input.maxLength = tokens.length;
-    field.appendChild(input);
-
-    function renderBoxes() {
-      for(let i=0;i<tokens.length;i++){
-        boxes[i].textContent = input.value[i] || "";
-        boxes[i].classList.remove("invalid");
-      }
-      validateBoxes();
+  function saveValue() {
+    if (validator(input.value)) {
+      localStorage.setItem(storageKey, input.value);
+      renderChips();
+      input.classList.remove('invalid');
+      return true;
+    } else {
+      input.classList.add('invalid');
+      return false;
     }
-
-    function validateBoxes() {
-      let valid=true;
-      if(labelText==="Date of Birth"){
-        const val = input.value.toUpperCase().padEnd(9," ");
-        const day=parseInt(val.slice(0,2));
-        const month=val.slice(2,5);
-        const year=parseInt(val.slice(5,9));
-        const months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-        if(day<1||day>31){boxes[0].classList.add("invalid"); boxes[1].classList.add("invalid"); valid=false;}
-        if(!months.includes(month)){boxes[2].classList.add("invalid"); boxes[3].classList.add("invalid"); boxes[4].classList.add("invalid"); valid=false;}
-        if(year<1900||year>2099){boxes[5].classList.add("invalid"); boxes[6].classList.add("invalid"); boxes[7].classList.add("invalid"); boxes[8].classList.add("invalid"); valid=false;}
-      }
-      return valid;
-    }
-
-    function saveValue() {
-      if(input.value.length===tokens.length && validateBoxes()) {
-        localStorage.setItem(storageKey,input.value);
-        renderChips();
-      }
-    }
-
-    function fillFromChip(val){
-      // Directly set hidden input and render all boxes once
-      input.value = val;
-      renderBoxes();
-    }
-
-    function renderChips() {
-      savedContainer.innerHTML="";
-      const val=localStorage.getItem(storageKey);
-      if(!val) return;
-      const labelEl = document.createElement("div");
-      labelEl.className="saved-label";
-      labelEl.textContent="Saved:";
-      savedContainer.appendChild(labelEl);
-
-      const chip = document.createElement("div");
-      chip.className="saved-chip";
-      chip.textContent=val;
-      chip.onclick=()=>fillFromChip(val);
-      savedContainer.appendChild(chip);
-    }
-
-    input.addEventListener("input", () => {
-      let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
-      if(val.length > tokens.length) val = val.slice(0, tokens.length);
-      input.value = val;
-
-      // Update visible boxes
-      for(let i=0;i<tokens.length;i++){
-        boxes[i].textContent = val[i] || "";
-        boxes[i].classList.remove("invalid");
-      }
-
-      // FORCE last box overwrite for iOS only during typing
-      if(val.length === tokens.length){
-        boxes[tokens.length-1].textContent = val[tokens.length-1];
-      }
-
-      validateBoxes();
-      saveValue();
-    });
-
-    input.addEventListener("keydown",(e)=>{
-      if(e.key==="Backspace") setTimeout(renderBoxes,0);
-    });
-
-    container.addEventListener("click",()=>input.focus());
-
-    renderChips();
-
-    return {input, boxes, getValue:()=>input.value, labelText, renderBoxes, renderChips};
   }
 
-  const fields = [
-    createProField("Date of Birth","NN-AAA-NNNN"),
-    createProField("Postal Code","ANA NAN"),
-    createProField("RAMQ","AAAA NNNN NNNN")
-  ];
+  function renderChips() {
+    savedContainer.innerHTML = '';
+    const val = localStorage.getItem(storageKey);
+    if (!val) return;
+    const label = document.createElement('span');
+    label.className = 'saved-label';
+    label.textContent = 'Saved:';
+    savedContainer.appendChild(label);
 
-  window.submitForm = ()=>{
-    let allValid=true;
-    let output="";
-    fields.forEach(f=>{
-      if(f.boxes.some(b=>b.classList.contains("invalid"))) allValid=false;
-      output+=f.labelText+": "+f.getValue()+"\n";
-    });
-    document.getElementById("report").innerText=output;
-    if(!allValid) return;
-    fields.forEach(f=>{f.input.value=""; f.renderBoxes();});
-  };
+    const chip = document.createElement('span');
+    chip.className = 'saved-chip';
+    chip.textContent = val;
+    chip.onclick = () => { input.value = val; saveValue(); };
+    savedContainer.appendChild(chip);
+  }
 
-  window.clearForm = ()=>{
-    fields.forEach(f=>{
-      localStorage.removeItem("pattern_"+f.labelText);
-      f.input.value="";
-      f.renderBoxes();
-      f.renderChips();
-    });
-    document.getElementById("report").innerText="";
-  };
+  input.addEventListener('input', saveValue);
 
+  renderChips();
+
+  return {input, saveValue, renderChips};
+}
+
+// Validators
+function dobValidator(val) {
+  const months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const match = val.toUpperCase().match(/^(\d{2})-([A-Z]{3})-(\d{4})$/);
+  if (!match) return false;
+  const day = parseInt(match[1]);
+  const month = match[2];
+  const year = parseInt(match[3]);
+  if(day<1||day>31) return false;
+  if(!months.includes(month)) return false;
+  if(year<1900||year>2099) return false;
+  return true;
+}
+
+function postalValidator(val) {
+  return /^[A-Z]\d[A-Z] \d[A-Z]\d$/i.test(val);
+}
+
+function ramqValidator(val) {
+  return /^[A-Z]{4} \d{4} \d{4}$/i.test(val);
+}
+
+// Initialize fields
+const dobField = initField('dob','pattern_DOB',dobValidator);
+const postalField = initField('postal','pattern_Postal',postalValidator);
+const ramqField = initField('ramq','pattern_RAMQ',ramqValidator);
+
+document.getElementById('submit-btn').addEventListener('click',()=>{
+  const allValid = dobField.saveValue() & postalField.saveValue() & ramqField.saveValue();
+  const report = `
+Date of Birth: ${dobField.input.value}
+Postal Code: ${postalField.input.value}
+RAMQ: ${ramqField.input.value}
+  `;
+  document.getElementById('report').innerText = report;
+  if(allValid){
+    dobField.input.value='';
+    postalField.input.value='';
+    ramqField.input.value='';
+  }
+});
+
+document.getElementById('clear-btn').addEventListener('click',()=>{
+  [dobField, postalField, ramqField].forEach(f=>{
+    localStorage.removeItem(f.input.id==='dob'?'pattern_DOB':f.input.id==='postal'?'pattern_Postal':'pattern_RAMQ');
+    f.input.value='';
+    f.renderChips();
+  });
+  document.getElementById('report').innerText='';
 });
 </script>
+
 </body>
 </html>
