@@ -2,44 +2,21 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pattern Input</title>
-
+<title>Pro Input Engine</title>
 <style>
 body { font-family: Arial; padding: 20px; }
-
 .field { margin-bottom: 25px; }
 .label { font-weight: bold; margin-bottom: 8px; }
-
-.pattern-container {
-  display: flex;
-  gap: 4px;
+.box-container { display: flex; gap: 4px; flex-wrap: wrap; }
+.box { 
+  width: 32px; height: 40px; 
+  border: 1px solid #ccc; text-align: center; 
+  font-size: 18px; line-height: 40px;
+  user-select: none;
 }
-
-.box {
-  width: 32px;
-  height: 40px;
-  text-align: center;
-  font-size: 18px;
-}
-
-.literal {
-  padding: 10px 4px;
-}
-
-.invalid {
-  background-color: #ffd6d6;
-}
-
-.saved-values {
-  margin-top: 6px;
-  font-size: 13px;
-}
-
-.saved-label {
-  color: #666;
-  margin-bottom: 3px;
-}
-
+.invalid { background-color: #ffd6d6; }
+.saved-values { margin-top: 6px; font-size: 13px; }
+.saved-label { color: #666; margin-bottom: 3px; }
 .saved-chip {
   display: inline-block;
   padding: 6px 10px;
@@ -48,14 +25,12 @@ body { font-family: Arial; padding: 20px; }
   border-radius: 12px;
   cursor: pointer;
 }
-
-button {
-  margin-right: 10px;
-  padding: 10px 15px;
+button { margin-right: 10px; padding: 10px 15px; }
+.hidden-input { 
+  position: absolute; opacity: 0; width: 1px; height: 1px; 
 }
 </style>
 </head>
-
 <body>
 
 <div id="form-area"></div>
@@ -67,14 +42,12 @@ button {
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", () => {
 
-  document.body.setAttribute("autocomplete", "off");
+  const formArea = document.getElementById("form-area");
 
-  function createField(parent, labelText, pattern) {
-
+  function createProField(labelText, pattern) {
     const storageKey = "pattern_" + labelText;
-
     const field = document.createElement("div");
     field.className = "field";
 
@@ -84,233 +57,142 @@ document.addEventListener("DOMContentLoaded", function() {
     field.appendChild(label);
 
     const container = document.createElement("div");
-    container.className = "pattern-container";
+    container.className = "box-container";
     field.appendChild(container);
 
     const savedContainer = document.createElement("div");
     savedContainer.className = "saved-values";
     field.appendChild(savedContainer);
 
-    parent.appendChild(field);
+    formArea.appendChild(field);
 
-    const inputs = [];
+    const boxes = [];
     const tokens = pattern.split("").filter(t => t==="A"||t==="N"||t==="X");
 
-    function getValue() {
-      let result = "";
-      let inputIndex = 0;
+    // create visible boxes
+    pattern.split("").forEach(token => {
+      if (token==="A"||token==="N"||token==="X") {
+        const box = document.createElement("div");
+        box.className = "box";
+        container.appendChild(box);
+        boxes.push(box);
+      } else {
+        const literal = document.createElement("div");
+        literal.className = "box";
+        literal.textContent = token;
+        literal.style.border = "none";
+        container.appendChild(literal);
+      }
+    });
 
-      pattern.split("").forEach(token => {
-        if (token === "A" || token === "N" || token === "X") {
-          result += inputs[inputIndex].value || "";
-          inputIndex++;
-        } else {
-          result += token;
-        }
-      });
+    // hidden input
+    const input = document.createElement("input");
+    input.className = "hidden-input";
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "characters");
+    input.setAttribute("spellcheck", "false");
+    input.maxLength = tokens.length;
+    input.inputType = "text";
 
-      return result;
+    field.appendChild(input);
+
+    function renderBoxes() {
+      for(let i=0;i<tokens.length;i++){
+        boxes[i].textContent = input.value[i] || "";
+        boxes[i].classList.remove("invalid");
+      }
+      validateBoxes();
     }
 
-    function validate() {
-      let valid = true;
-      inputs.forEach(i => i.classList.remove("invalid"));
-
-      if (labelText === "Date of Birth") {
-
-        const day = inputs[0].value + inputs[1].value;
-        const month = inputs[2].value + inputs[3].value + inputs[4].value;
-        const year = inputs.slice(5,9).map(i=>i.value).join("");
-
-        if (day && (parseInt(day) < 1 || parseInt(day) > 31)) {
-          inputs[0].classList.add("invalid");
-          inputs[1].classList.add("invalid");
-          valid = false;
-        }
-
-        const validMonths = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-        if (month && !validMonths.includes(month)) {
-          inputs[2].classList.add("invalid");
-          inputs[3].classList.add("invalid");
-          inputs[4].classList.add("invalid");
-          valid = false;
-        }
-
-        if (year && (parseInt(year) < 1900 || parseInt(year) > 2099)) {
-          inputs.slice(5,9).forEach(i=>i.classList.add("invalid"));
-          valid = false;
-        }
+    function validateBoxes() {
+      let valid=true;
+      if(labelText==="Date of Birth"){
+        const val = input.value.toUpperCase().padEnd(9," ");
+        const day=parseInt(val.slice(0,2));
+        const month=val.slice(2,5);
+        const year=parseInt(val.slice(5,9));
+        const months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+        if(day<1||day>31){boxes[0].classList.add("invalid"); boxes[1].classList.add("invalid"); valid=false;}
+        if(!months.includes(month)){boxes[2].classList.add("invalid"); boxes[3].classList.add("invalid"); boxes[4].classList.add("invalid"); valid=false;}
+        if(year<1900||year>2099){boxes[5].classList.add("invalid"); boxes[6].classList.add("invalid"); boxes[7].classList.add("invalid"); boxes[8].classList.add("invalid"); valid=false;}
       }
-
       return valid;
     }
 
-    function save() {
-      if (inputs.some(i => i.value === "")) return;
-      if (!validate()) return;
-
-      localStorage.setItem(storageKey, getValue());
-      renderSaved();
+    function saveValue() {
+      if(input.value.length===tokens.length && validateBoxes()) {
+        localStorage.setItem(storageKey,input.value);
+        renderChips();
+      }
     }
 
-    function fill(val) {
-      let inputIndex = 0;
-
-      pattern.split("").forEach((token, i) => {
-        if (token === "A" || token === "N" || token === "X") {
-          inputs[inputIndex].value = val[i] || "";
-          inputIndex++;
-        }
-      });
+    function fillFromChip(val){
+      input.value = val;
+      renderBoxes();
     }
 
-    function renderSaved() {
-      savedContainer.innerHTML = "";
-
-      const val = localStorage.getItem(storageKey);
-      if (!val) return;
-
-      const label = document.createElement("div");
-      label.className = "saved-label";
-      label.textContent = "Saved:";
-      savedContainer.appendChild(label);
+    function renderChips() {
+      savedContainer.innerHTML="";
+      const val=localStorage.getItem(storageKey);
+      if(!val) return;
+      const labelEl = document.createElement("div");
+      labelEl.className="saved-label";
+      labelEl.textContent="Saved:";
+      savedContainer.appendChild(labelEl);
 
       const chip = document.createElement("div");
-      chip.className = "saved-chip";
-      chip.textContent = val;
-
-      chip.onclick = () => fill(val);
-
+      chip.className="saved-chip";
+      chip.textContent=val;
+      chip.onclick=()=>fillFromChip(val);
       savedContainer.appendChild(chip);
     }
 
-    pattern.split("").forEach(token => {
-
-      if (token === "A" || token === "N" || token === "X") {
-
-        const input = document.createElement("input");
-        input.className = "box";
-        input.maxLength = 1;
-
-        // 🔑 KEY FIX: iPhone keyboard switching
-        if (token === "N") {
-          input.setAttribute("inputmode", "numeric");
-        } else {
-          input.setAttribute("inputmode", "text");
-        }
-
-        input.setAttribute("autocomplete", "off");
-        input.setAttribute("autocorrect", "off");
-        input.setAttribute("autocapitalize", "characters");
-        input.setAttribute("spellcheck", "false");
-
-        container.appendChild(input);
-        inputs.push(input);
-
-      } else {
-        const span = document.createElement("span");
-        span.className = "literal";
-        span.textContent = token;
-        container.appendChild(span);
-      }
+    input.addEventListener("input",()=>{
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+      renderBoxes();
+      saveValue();
     });
 
-    inputs.forEach((input, idx) => {
-
-      input.addEventListener("input", () => {
-
-        let val = input.value.toUpperCase();
-        const token = tokens[idx];
-
-        if (token === "A" && !/[A-Z]/.test(val)) val = "";
-        if (token === "N" && !/[0-9]/.test(val)) val = "";
-        if (token === "X" && !/[A-Z0-9]/.test(val)) val = "";
-
-        input.value = val;
-
-        if (val && idx < inputs.length - 1) {
-          inputs[idx + 1].focus();
-        }
-
-        // 🔑 KEY FIX: force Chrome repaint
-        setTimeout(() => {
-          validate();
-          save();
-        }, 0);
-      });
-
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Backspace" && input.value === "" && idx > 0) {
-          inputs[idx - 1].focus();
-        }
-      });
-
-      input.addEventListener("paste", (e) => {
-        e.preventDefault();
-        const text = e.clipboardData.getData("text").toUpperCase();
-
-        for (let i = 0; i < text.length && (idx + i) < inputs.length; i++) {
-          inputs[idx + i].value = text[i];
-        }
-
-        validate();
-        save();
-      });
+    input.addEventListener("keydown",(e)=>{
+      if(e.key==="Backspace") setTimeout(renderBoxes,0);
     });
 
-    renderSaved();
+    // focus visible boxes
+    container.addEventListener("click",()=>input.focus());
 
-    return { inputs, getValue, labelText };
+    renderChips();
+
+    return {input, boxes, getValue:()=>input.value, labelText};
   }
 
-  const parent = document.getElementById("form-area");
-
   const fields = [
-    createField(parent, "Date of Birth", "NN-AAA-NNNN"),
-    createField(parent, "Postal Code", "ANA NAN"),
-    createField(parent, "RAMQ", "AAAA NNNN NNNN")
+    createProField("Date of Birth","NN-AAA-NNNN"),
+    createProField("Postal Code","ANA NAN"),
+    createProField("RAMQ","AAAA NNNN NNNN")
   ];
 
-  window.submitForm = function() {
-
-    let output = "";
-    let allValid = true;
-
-    fields.forEach(f => {
-      if (f.inputs.some(i => i.classList.contains("invalid"))) {
-        allValid = false;
-      }
-      output += f.labelText + ": " + f.getValue() + "\n";
+  window.submitForm = ()=>{
+    let allValid=true;
+    let output="";
+    fields.forEach(f=>{
+      if(f.boxes.some(b=>b.classList.contains("invalid"))) allValid=false;
+      output+=f.labelText+": "+f.getValue()+"\n";
     });
-
-    document.getElementById("report").innerText = output;
-
-    if (!allValid) return;
-
-    fields.forEach(f => {
-      f.inputs.forEach(i => i.value = "");
-    });
+    document.getElementById("report").innerText=output;
+    if(!allValid) return;
+    fields.forEach(f=>f.input.value="");
+    fields.forEach(f=>renderBoxes(f));
   };
 
-  window.clearForm = function() {
-
-    fields.forEach(f => {
-      localStorage.removeItem("pattern_" + f.labelText);
-      f.inputs.forEach(i => i.value = "");
+  window.clearForm = ()=>{
+    fields.forEach(f=>{
+      localStorage.removeItem("pattern_"+f.labelText);
+      f.input.value="";
+      f.boxes.forEach(b=>b.textContent="");
     });
-
-    document.getElementById("report").innerText = "";
-
-    document.getElementById("form-area").innerHTML = "";
-
-    const newFields = [
-      createField(parent, "Date of Birth", "NN-AAA-NNNN"),
-      createField(parent, "Postal Code", "ANA NAN"),
-      createField(parent, "RAMQ", "AAAA NNNN NNNN")
-    ];
-
-    fields.length = 0;
-    newFields.forEach(f => fields.push(f));
+    document.getElementById("report").innerText="";
+    fields.forEach(f=>f.renderChips());
   };
 
 });
