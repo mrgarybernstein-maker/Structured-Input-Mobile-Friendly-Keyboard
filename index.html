@@ -124,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fillFromChip(val){
+      // Directly set hidden input and render all boxes once
       input.value = val;
       renderBoxes();
     }
@@ -155,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         boxes[i].classList.remove("invalid");
       }
 
-      // FORCE last box overwrite for iOS
+      // FORCE last box overwrite for iOS only during typing
       if(val.length === tokens.length){
         boxes[tokens.length-1].textContent = val[tokens.length-1];
       }
@@ -172,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderChips();
 
-    return {input, boxes, getValue:()=>input.value, labelText};
+    return {input, boxes, getValue:()=>input.value, labelText, renderBoxes, renderChips};
   }
 
   const fields = [
@@ -190,18 +191,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     document.getElementById("report").innerText=output;
     if(!allValid) return;
-    fields.forEach(f=>f.input.value="");
-    fields.forEach(f=>f.boxes.forEach(b=>b.textContent=""));
+    fields.forEach(f=>{f.input.value=""; f.renderBoxes();});
   };
 
   window.clearForm = ()=>{
     fields.forEach(f=>{
       localStorage.removeItem("pattern_"+f.labelText);
       f.input.value="";
-      f.boxes.forEach(b=>b.textContent="");
+      f.renderBoxes();
+      f.renderChips();
     });
     document.getElementById("report").innerText="";
-    fields.forEach(f=>f.renderChips());
   };
 
 });
