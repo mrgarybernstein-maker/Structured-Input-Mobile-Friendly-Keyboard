@@ -27,17 +27,27 @@ body { font-family: Arial; padding: 20px; }
 }
 
 .saved-values {
-  margin-top: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.saved-label {
+  color: #666;
+  margin-bottom: 3px;
 }
 
 .saved-chip {
   display: inline-block;
   padding: 6px 10px;
-  margin: 4px 4px 0 0;
+  margin: 3px 6px 0 0;
   background: #e0e7ff;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+}
+
+button {
+  margin-right: 10px;
+  padding: 10px 15px;
 }
 </style>
 </head>
@@ -85,15 +95,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function save() {
       const val = getValue();
-      if (!val) return;
-
+      if (!val || val.length < inputs.length) return;
       localStorage.setItem(storageKey, val);
       renderSaved();
     }
 
-    function fillFromValue(val) {
-      for (let i = 0; i < inputs.length && i < val.length; i++) {
-        inputs[i].value = val[i];
+    function fill(val) {
+      for (let i = 0; i < inputs.length; i++) {
+        inputs[i].value = val[i] || "";
       }
     }
 
@@ -103,11 +112,16 @@ document.addEventListener("DOMContentLoaded", function() {
       const val = localStorage.getItem(storageKey);
       if (!val) return;
 
+      const label = document.createElement("div");
+      label.className = "saved-label";
+      label.textContent = "Saved:";
+      savedContainer.appendChild(label);
+
       const chip = document.createElement("div");
       chip.className = "saved-chip";
       chip.textContent = val;
 
-      chip.onclick = () => fillFromValue(val);
+      chip.onclick = () => fill(val);
 
       savedContainer.appendChild(chip);
     }
@@ -119,10 +133,6 @@ document.addEventListener("DOMContentLoaded", function() {
         const input = document.createElement("input");
         input.className = "box";
         input.maxLength = 1;
-
-        if (token === "A") input.pattern = "[A-Za-z]";
-        if (token === "N") input.pattern = "[0-9]";
-        if (token === "X") input.pattern = "[A-Za-z0-9]";
 
         container.appendChild(input);
         inputs.push(input);
@@ -137,34 +147,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
     inputs.forEach((input, idx) => {
 
-      input.addEventListener("keydown", (e) => {
+      input.addEventListener("input", (e) => {
 
-        if (e.key.length === 1) {
-          e.preventDefault();
-          const char = e.key.toUpperCase();
+        let val = input.value.toUpperCase();
 
-          if (char.match(input.pattern)) {
-            input.value = char;
+        // validation (JS only — no pattern attribute)
+        if (pattern[idx] === "A" && !/[A-Z]/.test(val)) val = "";
+        if (pattern[idx] === "N" && !/[0-9]/.test(val)) val = "";
+        if (pattern[idx] === "X" && !/[A-Z0-9]/.test(val)) val = "";
 
-            if (idx < inputs.length - 1) {
-              inputs[idx + 1].focus();
-            }
+        input.value = val;
 
-            save();
-          }
+        if (val && idx < inputs.length - 1) {
+          inputs[idx + 1].focus();
         }
 
-        if (e.key === "Backspace") {
-          e.preventDefault();
+        save();
+      });
 
-          if (input.value === "" && idx > 0) {
-            inputs[idx - 1].focus();
-            inputs[idx - 1].value = "";
-          } else {
-            input.value = "";
-          }
-
-          save();
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && input.value === "" && idx > 0) {
+          inputs[idx - 1].focus();
         }
       });
 
@@ -202,21 +205,38 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     document.getElementById("report").innerText = output;
+
+    // clear inputs ONLY (keep saved values)
+    fields.forEach(f => {
+      f.inputs.forEach(i => i.value = "");
+    });
   };
 
   window.clearForm = function() {
 
     fields.forEach(f => {
-
       const key = "pattern_" + f.labelText;
 
       f.inputs.forEach(i => i.value = "");
-
       localStorage.removeItem(key);
     });
 
     document.getElementById("report").innerText = "";
-    location.reload(); // simple refresh to reset chips
+
+    // refresh chips
+    document.getElementById("form-area").innerHTML = "";
+
+    fields.length = 0;
+
+    const parent = document.getElementById("form-area");
+
+    const newFields = [
+      createField(parent, "Date of Birth", "NN-AAA-NNNN"),
+      createField(parent, "Postal Code", "ANA NAN"),
+      createField(parent, "RAMQ", "AAAA NNNN NNNN")
+    ];
+
+    newFields.forEach(f => fields.push(f));
   };
 
 });
