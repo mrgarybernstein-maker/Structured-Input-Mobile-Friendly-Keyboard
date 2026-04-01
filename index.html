@@ -15,43 +15,29 @@ body { font-family: Arial; padding: 20px; }
   gap: 4px;
 }
 
-.box-wrapper {
-  position: relative;
-}
-
 .box {
   width: 32px;
   height: 40px;
   text-align: center;
   font-size: 18px;
-  position: relative;
-  z-index: 2;
-  background: transparent;
-}
-
-.ghost {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 40px;
-  line-height: 40px;
-  text-align: center;
-  color: #bbb;
-  font-size: 18px;
-  z-index: 1;
-  pointer-events: none;
 }
 
 .literal {
   padding: 10px 4px;
 }
 
-.invalid { border: 2px solid red; }
+.saved-values {
+  margin-top: 8px;
+}
 
-button {
-  margin-right: 10px;
-  padding: 10px 15px;
+.saved-chip {
+  display: inline-block;
+  padding: 6px 10px;
+  margin: 4px 4px 0 0;
+  background: #e0e7ff;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
 }
 </style>
 </head>
@@ -63,6 +49,8 @@ button {
 <br>
 <button onclick="submitForm()">Submit</button>
 <button onclick="clearForm()">Clear</button>
+
+<div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -83,41 +71,50 @@ document.addEventListener("DOMContentLoaded", function() {
     container.className = "pattern-container";
     field.appendChild(container);
 
+    const savedContainer = document.createElement("div");
+    savedContainer.className = "saved-values";
+    field.appendChild(savedContainer);
+
     parent.appendChild(field);
 
     const inputs = [];
-    const ghosts = [];
 
     function getValue() {
       return inputs.map(i => i.value).join("");
     }
 
     function save() {
-      localStorage.setItem(storageKey, getValue());
-    }
-
-    function loadGhosts() {
-      const val = localStorage.getItem(storageKey);
+      const val = getValue();
       if (!val) return;
 
-      for (let i = 0; i < ghosts.length; i++) {
-        ghosts[i].textContent = val[i] || "";
+      localStorage.setItem(storageKey, val);
+      renderSaved();
+    }
+
+    function fillFromValue(val) {
+      for (let i = 0; i < inputs.length && i < val.length; i++) {
+        inputs[i].value = val[i];
       }
     }
 
-    function clearGhosts() {
-      ghosts.forEach(g => g.textContent = "");
+    function renderSaved() {
+      savedContainer.innerHTML = "";
+
+      const val = localStorage.getItem(storageKey);
+      if (!val) return;
+
+      const chip = document.createElement("div");
+      chip.className = "saved-chip";
+      chip.textContent = val;
+
+      chip.onclick = () => fillFromValue(val);
+
+      savedContainer.appendChild(chip);
     }
 
     pattern.split("").forEach(token => {
 
       if (token === "A" || token === "N" || token === "X") {
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "box-wrapper";
-
-        const ghost = document.createElement("div");
-        ghost.className = "ghost";
 
         const input = document.createElement("input");
         input.className = "box";
@@ -127,12 +124,8 @@ document.addEventListener("DOMContentLoaded", function() {
         if (token === "N") input.pattern = "[0-9]";
         if (token === "X") input.pattern = "[A-Za-z0-9]";
 
-        wrapper.appendChild(ghost);
-        wrapper.appendChild(input);
-        container.appendChild(wrapper);
-
+        container.appendChild(input);
         inputs.push(input);
-        ghosts.push(ghost);
 
       } else {
         const span = document.createElement("span");
@@ -144,10 +137,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     inputs.forEach((input, idx) => {
 
-      input.addEventListener("focus", () => {
-        loadGhosts();   // 👈 SHOW ghost on tap
-      });
-
       input.addEventListener("keydown", (e) => {
 
         if (e.key.length === 1) {
@@ -155,19 +144,13 @@ document.addEventListener("DOMContentLoaded", function() {
           const char = e.key.toUpperCase();
 
           if (char.match(input.pattern)) {
-
             input.value = char;
-            ghosts[idx].textContent = "";
-            input.classList.remove("invalid");
-
-            save();
 
             if (idx < inputs.length - 1) {
               inputs[idx + 1].focus();
             }
 
-          } else {
-            input.classList.add("invalid");
+            save();
           }
         }
 
@@ -191,14 +174,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
         for (let i = 0; i < text.length && (idx + i) < inputs.length; i++) {
           inputs[idx + i].value = text[i];
-          ghosts[idx + i].textContent = "";
         }
 
         save();
       });
     });
 
-    return { inputs, getValue, labelText, clearGhosts };
+    renderSaved();
+
+    return { inputs, getValue, labelText };
   }
 
   const parent = document.getElementById("form-area");
@@ -217,27 +201,22 @@ document.addEventListener("DOMContentLoaded", function() {
       output += f.labelText + ": " + f.getValue() + "\\n";
     });
 
-    console.log(output);
-    alert(output);
-
-    clearForm(); // 👈 clear after submit
+    document.getElementById("report").innerText = output;
   };
 
   window.clearForm = function() {
 
     fields.forEach(f => {
 
-      const storageKey = "pattern_" + f.labelText;
+      const key = "pattern_" + f.labelText;
 
-      f.inputs.forEach(input => {
-        input.value = "";
-        input.classList.remove("invalid");
-      });
+      f.inputs.forEach(i => i.value = "");
 
-      f.clearGhosts();
-
-      localStorage.removeItem(storageKey);
+      localStorage.removeItem(key);
     });
+
+    document.getElementById("report").innerText = "";
+    location.reload(); // simple refresh to reset chips
   };
 
 });
