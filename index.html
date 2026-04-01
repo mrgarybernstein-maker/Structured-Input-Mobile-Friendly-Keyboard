@@ -65,6 +65,9 @@ button {
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
+  // Disable browser autofill globally
+  document.body.setAttribute("autocomplete", "off");
+
   function createField(parent, labelText, pattern) {
 
     const storageKey = "pattern_" + labelText;
@@ -90,20 +93,37 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputs = [];
 
     function getValue() {
-      return inputs.map(i => i.value).join("");
+      let result = "";
+      let inputIndex = 0;
+
+      pattern.split("").forEach(token => {
+        if (token === "A" || token === "N" || token === "X") {
+          result += inputs[inputIndex].value || "";
+          inputIndex++;
+        } else {
+          result += token;
+        }
+      });
+
+      return result;
     }
 
     function save() {
+      if (inputs.some(i => i.value === "")) return;
       const val = getValue();
-      if (!val || val.length < inputs.length) return;
       localStorage.setItem(storageKey, val);
       renderSaved();
     }
 
     function fill(val) {
-      for (let i = 0; i < inputs.length; i++) {
-        inputs[i].value = val[i] || "";
-      }
+      let inputIndex = 0;
+
+      pattern.split("").forEach((token, i) => {
+        if (token === "A" || token === "N" || token === "X") {
+          inputs[inputIndex].value = val[i] || "";
+          inputIndex++;
+        }
+      });
     }
 
     function renderSaved() {
@@ -134,6 +154,12 @@ document.addEventListener("DOMContentLoaded", function() {
         input.className = "box";
         input.maxLength = 1;
 
+        // Disable Chrome/Safari interference
+        input.setAttribute("autocomplete", "off");
+        input.setAttribute("autocorrect", "off");
+        input.setAttribute("autocapitalize", "characters");
+        input.setAttribute("spellcheck", "false");
+
         container.appendChild(input);
         inputs.push(input);
 
@@ -147,14 +173,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     inputs.forEach((input, idx) => {
 
-      input.addEventListener("input", (e) => {
+      input.addEventListener("input", () => {
 
         let val = input.value.toUpperCase();
 
-        // validation (JS only — no pattern attribute)
-        if (pattern[idx] === "A" && !/[A-Z]/.test(val)) val = "";
-        if (pattern[idx] === "N" && !/[0-9]/.test(val)) val = "";
-        if (pattern[idx] === "X" && !/[A-Z0-9]/.test(val)) val = "";
+        const token = pattern.split("").filter(t => t==="A"||t==="N"||t==="X")[idx];
+
+        if (token === "A" && !/[A-Z]/.test(val)) val = "";
+        if (token === "N" && !/[0-9]/.test(val)) val = "";
+        if (token === "X" && !/[A-Z0-9]/.test(val)) val = "";
 
         input.value = val;
 
@@ -201,12 +228,12 @@ document.addEventListener("DOMContentLoaded", function() {
     let output = "";
 
     fields.forEach(f => {
-      output += f.labelText + ": " + f.getValue() + "\\n";
+      output += f.labelText + ": " + f.getValue() + "\n";
     });
 
     document.getElementById("report").innerText = output;
 
-    // clear inputs ONLY (keep saved values)
+    // clear inputs only
     fields.forEach(f => {
       f.inputs.forEach(i => i.value = "");
     });
@@ -216,19 +243,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
     fields.forEach(f => {
       const key = "pattern_" + f.labelText;
-
-      f.inputs.forEach(i => i.value = "");
       localStorage.removeItem(key);
+      f.inputs.forEach(i => i.value = "");
     });
 
     document.getElementById("report").innerText = "";
 
-    // refresh chips
+    // rebuild UI
     document.getElementById("form-area").innerHTML = "";
-
-    fields.length = 0;
-
-    const parent = document.getElementById("form-area");
 
     const newFields = [
       createField(parent, "Date of Birth", "NN-AAA-NNNN"),
@@ -236,6 +258,7 @@ document.addEventListener("DOMContentLoaded", function() {
       createField(parent, "RAMQ", "AAAA NNNN NNNN")
     ];
 
+    fields.length = 0;
     newFields.forEach(f => fields.push(f));
   };
 
