@@ -2,16 +2,17 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine v5</title>
+<title>Pro Input Engine v6</title>
 <style>
 body { font-family: Arial; padding: 20px; }
 .field { margin-bottom: 25px; }
 .label { font-weight: bold; margin-bottom: 8px; display: block; }
-.char-box {
-  width: 30px; font-size: 18px; text-align: center; padding: 6px;
+.block-input {
+  width: 50px; font-size: 18px; text-align: center; padding: 6px;
   margin-right: 4px; border: 1px solid #ccc; border-radius: 4px;
 }
-.char-box.invalid { border-color: red; background: #ffd6d6; }
+.block-input.invalid { border-color: red; background: #ffd6d6; }
+.delimiter { font-size: 18px; margin-right: 4px; }
 .saved-values { margin-top: 6px; font-size: 13px; }
 .saved-label { color: #666; margin-bottom: 3px; display: block; }
 .saved-chip {
@@ -49,61 +50,62 @@ button { margin-right: 10px; padding: 10px 15px; }
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-// ========== Helper Functions ==========
-function createCharInputs(containerId, pattern, storageKey) {
+// ===== Helper to create per-block inputs =====
+function createBlockField(containerId, blocks, storageKey, delimiters) {
   const container = document.getElementById(containerId);
   const savedContainer = document.getElementById(containerId+'-saved');
-  const boxes = [];
+  const inputs = [];
   const hiddenInput = document.createElement('input');
   hiddenInput.type='hidden';
   container.appendChild(hiddenInput);
 
-  pattern.split('').forEach((p,i)=>{
-    if(p==='N' || p==='A'){
-      const input = document.createElement('input');
-      input.type='text';
-      input.maxLength=1;
-      input.className='char-box';
-      input.inputMode = p==='N'?'numeric':'text';
-      container.appendChild(input);
-      boxes.push({input, type:p});
-      input.addEventListener('input', ()=>{
-        if(input.value.length>0){
-          input.value = p==='N'?input.value.replace(/\D/,''):input.value.replace(/[^A-Za-z]/,'').toUpperCase();
-          // auto-advance
-          let next = boxes.findIndex(b=>b.input===input)+1;
-          if(next<boxes.length) boxes[next].input.focus();
-        }
-        updateHidden();
-      });
-      input.addEventListener('keydown',(e)=>{
-        if(e.key==='Backspace' && input.value===''){
-          let prev = boxes.findIndex(b=>b.input===input)-1;
-          if(prev>=0) boxes[prev].input.focus();
-        }
-      });
-    } else {
-      // static delimiter
+  blocks.forEach((block, idx) => {
+    const input = document.createElement('input');
+    input.type='text';
+    input.maxLength = block.length;
+    input.className='block-input';
+    input.inputMode = block.type==='N'?'numeric':'text';
+    container.appendChild(input);
+    inputs.push({input, block});
+
+    input.addEventListener('input', ()=>{
+      // enforce alpha/numeric and uppercase
+      if(block.type==='N') input.value=input.value.replace(/\D/g,'');
+      else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
+      if(input.value.length===block.length && idx<inputs.length-1){
+        inputs[idx+1].input.focus();
+      }
+      updateHidden();
+    });
+
+    input.addEventListener('keydown',(e)=>{
+      if(e.key==='Backspace' && input.value.length===0 && idx>0){
+        inputs[idx-1].input.focus();
+      }
+    });
+
+    // delimiter
+    if(delimiters[idx]){
       const span = document.createElement('span');
-      span.textContent=p;
-      span.style.marginRight='2px';
+      span.textContent = delimiters[idx];
+      span.className='delimiter';
       container.appendChild(span);
     }
   });
 
   function updateHidden(){
-    hiddenInput.value = boxes.map(b=>b.input.value).join('');
+    hiddenInput.value = inputs.map(b=>b.input.value).join('');
     validate();
   }
 
   function validate(){
-    let valid = true;
-    boxes.forEach(b=>{
-      if(b.type==='N' && !/\d/.test(b.input.value)) { b.input.classList.add('invalid'); valid=false;}
-      else if(b.type==='A' && !/[A-Z]/.test(b.input.value)) { b.input.classList.add('invalid'); valid=false;}
+    let valid=true;
+    inputs.forEach(b=>{
+      if(b.block.type==='N' && b.input.value.length!==b.block.length) { b.input.classList.add('invalid'); valid=false;}
+      else if(b.block.type==='A' && b.input.value.length!==b.block.length) { b.input.classList.add('invalid'); valid=false;}
       else b.input.classList.remove('invalid');
     });
-    return valid && boxes.every(b=>b.input.value.length>0);
+    return valid;
   }
 
   function saveValue(){
@@ -126,7 +128,7 @@ function createCharInputs(containerId, pattern, storageKey) {
     label.textContent='Saved:';
     savedContainer.appendChild(label);
     stored.forEach(v=>{
-      const chip=document.createElement('span');
+      const chip = document.createElement('span');
       chip.className='saved-chip';
       chip.textContent=v;
       chip.onclick=()=>{ fillFromValue(v); };
@@ -135,15 +137,16 @@ function createCharInputs(containerId, pattern, storageKey) {
   }
 
   function fillFromValue(val){
-    let i=0;
-    boxes.forEach(b=>{
-      b.input.value = val[i++] || '';
+    let pos=0;
+    inputs.forEach(b=>{
+      b.input.value=val.slice(pos,pos+b.block.length);
+      pos+=b.block.length;
     });
     updateHidden();
   }
 
   function clearAll(){
-    boxes.forEach(b=>b.input.value='');
+    inputs.forEach(b=>b.input.value='');
     updateHidden();
     renderChips();
   }
@@ -152,12 +155,20 @@ function createCharInputs(containerId, pattern, storageKey) {
   return {saveValue, clearAll, hiddenInput};
 }
 
-// ========== Initialize Fields ==========
-const dob = createCharInputs('dob-field','NN-AAA-NNNN','pattern_DOB');
-const postal = createCharInputs('postal-field','ANA NAN','pattern_Postal');
-const ramq = createCharInputs('ramq-field','AAAA NNNN NNNN','pattern_RAMQ');
+// ===== Initialize fields =====
+const dob = createBlockField('dob-field',
+  [{length:2,type:'N'},{length:3,type:'A'},{length:4,type:'N'}],
+  'pattern_DOB',['-','-']);
 
-// ========== Submit & Clear ==========
+const postal = createBlockField('postal-field',
+  [{length:1,type:'A'},{length:1,type:'N'},{length:1,type:'A'},{length:1,type:'N'},{length:1,type:'A'},{length:1,type:'N'}],
+  'pattern_Postal',[' ',' ']);
+
+const ramq = createBlockField('ramq-field',
+  [{length:4,type:'A'},{length:4,type:'N'},{length:4,type:'N'}],
+  'pattern_RAMQ',[' ',' ']);
+
+// ===== Submit & Clear =====
 document.getElementById('submit-btn').addEventListener('click',()=>{
   const allValid = dob.saveValue() & postal.saveValue() & ramq.saveValue();
   const report = `
@@ -180,6 +191,5 @@ document.getElementById('clear-btn').addEventListener('click',()=>{
   document.getElementById('report').innerText='';
 });
 </script>
-
 </body>
 </html>
