@@ -26,6 +26,10 @@ body { font-family: Arial; padding: 20px; }
   padding: 10px 4px;
 }
 
+.invalid {
+  background-color: #ffd6d6;
+}
+
 .saved-values {
   margin-top: 6px;
   font-size: 13px;
@@ -65,7 +69,6 @@ button {
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-  // Disable browser autofill globally
   document.body.setAttribute("autocomplete", "off");
 
   function createField(parent, labelText, pattern) {
@@ -91,6 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
     parent.appendChild(field);
 
     const inputs = [];
+    const tokens = pattern.split("").filter(t => t==="A"||t==="N"||t==="X");
 
     function getValue() {
       let result = "";
@@ -108,10 +112,47 @@ document.addEventListener("DOMContentLoaded", function() {
       return result;
     }
 
+    function validate() {
+
+      let valid = true;
+
+      inputs.forEach(i => i.classList.remove("invalid"));
+
+      // Special DOB validation
+      if (labelText === "Date of Birth") {
+
+        const day = inputs[0].value + inputs[1].value;
+        const month = inputs[2].value + inputs[3].value + inputs[4].value;
+        const year = inputs.slice(5,9).map(i=>i.value).join("");
+
+        if (day && (parseInt(day) < 1 || parseInt(day) > 31)) {
+          inputs[0].classList.add("invalid");
+          inputs[1].classList.add("invalid");
+          valid = false;
+        }
+
+        const validMonths = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+        if (month && !validMonths.includes(month)) {
+          inputs[2].classList.add("invalid");
+          inputs[3].classList.add("invalid");
+          inputs[4].classList.add("invalid");
+          valid = false;
+        }
+
+        if (year && (parseInt(year) < 1900 || parseInt(year) > 2099)) {
+          inputs.slice(5,9).forEach(i=>i.classList.add("invalid"));
+          valid = false;
+        }
+      }
+
+      return valid;
+    }
+
     function save() {
       if (inputs.some(i => i.value === "")) return;
-      const val = getValue();
-      localStorage.setItem(storageKey, val);
+      if (!validate()) return;
+
+      localStorage.setItem(storageKey, getValue());
       renderSaved();
     }
 
@@ -154,7 +195,6 @@ document.addEventListener("DOMContentLoaded", function() {
         input.className = "box";
         input.maxLength = 1;
 
-        // Disable Chrome/Safari interference
         input.setAttribute("autocomplete", "off");
         input.setAttribute("autocorrect", "off");
         input.setAttribute("autocapitalize", "characters");
@@ -176,12 +216,16 @@ document.addEventListener("DOMContentLoaded", function() {
       input.addEventListener("input", () => {
 
         let val = input.value.toUpperCase();
-
-        const token = pattern.split("").filter(t => t==="A"||t==="N"||t==="X")[idx];
+        const token = tokens[idx];
 
         if (token === "A" && !/[A-Z]/.test(val)) val = "";
         if (token === "N" && !/[0-9]/.test(val)) val = "";
         if (token === "X" && !/[A-Z0-9]/.test(val)) val = "";
+
+        // Auto month formatting (DOB only)
+        if (labelText === "Date of Birth" && idx >= 2 && idx <= 4) {
+          val = val.toUpperCase();
+        }
 
         input.value = val;
 
@@ -189,6 +233,7 @@ document.addEventListener("DOMContentLoaded", function() {
           inputs[idx + 1].focus();
         }
 
+        validate();
         save();
       });
 
@@ -206,6 +251,7 @@ document.addEventListener("DOMContentLoaded", function() {
           inputs[idx + i].value = text[i];
         }
 
+        validate();
         save();
       });
     });
@@ -228,12 +274,11 @@ document.addEventListener("DOMContentLoaded", function() {
     let output = "";
 
     fields.forEach(f => {
-      output += f.labelText + ": " + f.getValue() + "\n";
+      output += f.labelText + ": " + f.getValue() + "\\n";
     });
 
     document.getElementById("report").innerText = output;
 
-    // clear inputs only
     fields.forEach(f => {
       f.inputs.forEach(i => i.value = "");
     });
@@ -242,14 +287,12 @@ document.addEventListener("DOMContentLoaded", function() {
   window.clearForm = function() {
 
     fields.forEach(f => {
-      const key = "pattern_" + f.labelText;
-      localStorage.removeItem(key);
+      localStorage.removeItem("pattern_" + f.labelText);
       f.inputs.forEach(i => i.value = "");
     });
 
     document.getElementById("report").innerText = "";
 
-    // rebuild UI
     document.getElementById("form-area").innerHTML = "";
 
     const newFields = [
