@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine v8</title>
+<title>Pro Input Engine v9</title>
 <style>
 body { font-family: Arial; padding: 20px; }
 .field { margin-bottom: 25px; }
 .label { font-weight: bold; margin-bottom: 8px; display: block; }
 .block-input {
-  width: 60px; font-size: 18px; text-align: center; padding: 6px;
+  width: 50px; font-size: 18px; text-align: center; padding: 6px;
   margin-right: 4px; border: 1px solid #ccc; border-radius: 4px;
 }
 .block-input.invalid { border-color: red; background: #ffd6d6; }
@@ -50,7 +50,7 @@ button { margin-right: 10px; padding: 10px 15px; }
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-// ===== Helper to create per-block inputs with alpha/numeric enforcement =====
+// ===== Utility to create block inputs =====
 function createBlockField(containerId, blocks, delimiters, storageKey) {
   const container = document.getElementById(containerId);
   const savedContainer = document.getElementById(containerId+'-saved');
@@ -62,42 +62,34 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   blocks.forEach((block, idx)=>{
     const input = document.createElement('input');
     input.type='text';
-    input.maxLength = block.length;
+    input.maxLength = 1; // one character per input
     input.className = 'block-input';
-    input.inputMode = block.type==='N' ? 'numeric' : 'text';
+    input.inputMode = block==='N'?'numeric':'text';
     container.appendChild(input);
-    inputs.push({input, block});
+    inputs.push({input, type:block});
 
     input.addEventListener('input', ()=>{
-      if(block.type==='N') input.value=input.value.replace(/\D/g,'');
-      else if(block.type==='A/N'){
-        // Alternating alpha/numeric pattern
-        let val = input.value.toUpperCase().replace(/[^A-Za-z0-9]/g,'');
-        let pattern = block.pattern;
-        let newVal='';
-        for(let i=0;i<val.length && i<pattern.length;i++){
-          if(pattern[i]==='A') newVal+=val[i].replace(/[^A-Z]/,'');
-          else newVal+=val[i].replace(/[^0-9]/,'');
-        }
-        input.value=newVal;
-      } else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
-
-      if(input.value.length===block.length && idx<inputs.length-1){
-        inputs[idx+1].input.focus();
+      if(input.value.length>0){
+        if(block==='N') input.value=input.value.replace(/\D/g,'');
+        else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
+        // auto advance
+        const currentIdx = inputs.findIndex(b=>b.input===input);
+        if(currentIdx<inputs.length-1) inputs[currentIdx+1].input.focus();
       }
       updateHidden();
     });
 
     input.addEventListener('keydown', (e)=>{
-      if(e.key==='Backspace' && input.value.length===0 && idx>0){
-        inputs[idx-1].input.focus();
+      if(e.key==='Backspace' && input.value.length===0){
+        const currentIdx = inputs.findIndex(b=>b.input===input);
+        if(currentIdx>0) inputs[currentIdx-1].input.focus();
       }
     });
 
     if(delimiters[idx]){
-      const span = document.createElement('span');
+      const span=document.createElement('span');
+      span.className='delimiter';
       span.textContent = delimiters[idx];
-      span.className = 'delimiter';
       container.appendChild(span);
     }
   });
@@ -110,8 +102,9 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   function validate(){
     let valid = true;
     inputs.forEach(b=>{
-      if(b.input.value.length!==b.block.length){
-        b.input.classList.add('invalid'); valid=false;
+      if(b.input.value.length===0){
+        b.input.classList.add('invalid');
+        valid=false;
       } else b.input.classList.remove('invalid');
     });
     return valid;
@@ -132,7 +125,7 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
     savedContainer.innerHTML='';
     let stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
     if(stored.length===0) return;
-    const label = document.createElement('span');
+    const label=document.createElement('span');
     label.className='saved-label';
     label.textContent='Saved:';
     savedContainer.appendChild(label);
@@ -148,8 +141,8 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   function fillFromValue(val){
     let pos=0;
     inputs.forEach(b=>{
-      b.input.value = val.slice(pos,pos+b.block.length);
-      pos+=b.block.length;
+      b.input.value = val[pos]||'';
+      pos++;
     });
     updateHidden();
   }
@@ -164,41 +157,25 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   return {saveValue, clearAll, hiddenInput};
 }
 
-// ===== Initialize fields =====
+// ===== Define fields =====
 
-// DOB: DD-MMM-YYYY
-const dob = createBlockField(
-  'dob-field',
-  [{length:2,type:'N'},{length:3,type:'A'},{length:4,type:'N'}],
-  ['-','-'],
-  'pattern_DOB'
-);
+// DOB: DD-MMM-YYYY (3 blocks)
+const dobPattern = ['N','N','A','A','A','N','N','N','N']; // 2 digits, 3 letters, 4 digits
+const dobDelims = [null,null,'-','-']; // inserted visually after positions
+const dob = createBlockField('dob-field', dobPattern, dobDelims, 'pattern_DOB');
 
-// Postal: ANA NAN
-const postal = createBlockField(
-  'postal-field',
-  [
-    {length:3,type:'A/N', pattern:['A','N','A']},
-    {length:3,type:'A/N', pattern:['N','A','N']}
-  ],
-  [' '],
-  'pattern_Postal'
-);
+// Postal: ANA NAN (6 inputs)
+const postalPattern = ['A','N','A','N','A','N'];
+const postalDelims = [null,null,' ',null,null]; // space after 3rd char
+const postal = createBlockField('postal-field', postalPattern, postalDelims, 'pattern_Postal');
 
-// RAMQ: AAAA NNNN NNNN
-const ramq = createBlockField(
-  'ramq-field',
-  [
-    {length:4,type:'A'},
-    {length:4,type:'N'},
-    {length:4,type:'N'}
-  ],
-  [' ',' '],
-  'pattern_RAMQ'
-);
+// RAMQ: AAAA NNNN NNNN (12 inputs)
+const ramqPattern = ['A','A','A','A','N','N','N','N','N','N','N','N'];
+const ramqDelims = [null,null,null,' ',null,null,null,' ',null,null,null,null]; // spaces after 4th and 8th
+const ramq = createBlockField('ramq-field', ramqPattern, ramqDelims, 'pattern_RAMQ');
 
 // ===== Submit & Clear =====
-document.getElementById('submit-btn').addEventListener('click',()=>{
+document.getElementById('submit-btn').addEventListener('click', ()=>{
   const allValid = dob.saveValue() & postal.saveValue() & ramq.saveValue();
   const report = `
 Date of Birth: ${dob.hiddenInput.value}
@@ -212,7 +189,7 @@ RAMQ: ${ramq.hiddenInput.value}`;
   }
 });
 
-document.getElementById('clear-btn').addEventListener('click',()=>{
+document.getElementById('clear-btn').addEventListener('click', ()=>{
   [dob,postal,ramq].forEach(f=>{
     localStorage.removeItem(f===dob?'pattern_DOB':f===postal?'pattern_Postal':'pattern_RAMQ');
     f.clearAll();
