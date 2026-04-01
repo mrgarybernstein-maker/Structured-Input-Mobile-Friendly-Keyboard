@@ -113,12 +113,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function validate() {
-
       let valid = true;
-
       inputs.forEach(i => i.classList.remove("invalid"));
 
-      // Special DOB validation
       if (labelText === "Date of Birth") {
 
         const day = inputs[0].value + inputs[1].value;
@@ -195,6 +192,13 @@ document.addEventListener("DOMContentLoaded", function() {
         input.className = "box";
         input.maxLength = 1;
 
+        // 🔑 KEY FIX: iPhone keyboard switching
+        if (token === "N") {
+          input.setAttribute("inputmode", "numeric");
+        } else {
+          input.setAttribute("inputmode", "text");
+        }
+
         input.setAttribute("autocomplete", "off");
         input.setAttribute("autocorrect", "off");
         input.setAttribute("autocapitalize", "characters");
@@ -222,19 +226,17 @@ document.addEventListener("DOMContentLoaded", function() {
         if (token === "N" && !/[0-9]/.test(val)) val = "";
         if (token === "X" && !/[A-Z0-9]/.test(val)) val = "";
 
-        // Auto month formatting (DOB only)
-        if (labelText === "Date of Birth" && idx >= 2 && idx <= 4) {
-          val = val.toUpperCase();
-        }
-
         input.value = val;
 
         if (val && idx < inputs.length - 1) {
           inputs[idx + 1].focus();
         }
 
-        validate();
-        save();
+        // 🔑 KEY FIX: force Chrome repaint
+        setTimeout(() => {
+          validate();
+          save();
+        }, 0);
       });
 
       input.addEventListener("keydown", (e) => {
@@ -272,12 +274,18 @@ document.addEventListener("DOMContentLoaded", function() {
   window.submitForm = function() {
 
     let output = "";
+    let allValid = true;
 
     fields.forEach(f => {
-      output += f.labelText + ": " + f.getValue() + "\\n";
+      if (f.inputs.some(i => i.classList.contains("invalid"))) {
+        allValid = false;
+      }
+      output += f.labelText + ": " + f.getValue() + "\n";
     });
 
     document.getElementById("report").innerText = output;
+
+    if (!allValid) return;
 
     fields.forEach(f => {
       f.inputs.forEach(i => i.value = "");
