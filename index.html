@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine v7</title>
+<title>Pro Input Engine v8</title>
 <style>
 body { font-family: Arial; padding: 20px; }
 .field { margin-bottom: 25px; }
@@ -50,7 +50,7 @@ button { margin-right: 10px; padding: 10px 15px; }
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-// ===== Helper to create per-block inputs =====
+// ===== Helper to create per-block inputs with alpha/numeric enforcement =====
 function createBlockField(containerId, blocks, delimiters, storageKey) {
   const container = document.getElementById(containerId);
   const savedContainer = document.getElementById(containerId+'-saved');
@@ -62,15 +62,26 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   blocks.forEach((block, idx)=>{
     const input = document.createElement('input');
     input.type='text';
-    input.maxLength=block.length;
-    input.className='block-input';
-    input.inputMode=block.type==='N'?'numeric':'text';
+    input.maxLength = block.length;
+    input.className = 'block-input';
+    input.inputMode = block.type==='N' ? 'numeric' : 'text';
     container.appendChild(input);
     inputs.push({input, block});
 
     input.addEventListener('input', ()=>{
       if(block.type==='N') input.value=input.value.replace(/\D/g,'');
-      else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
+      else if(block.type==='A/N'){
+        // Alternating alpha/numeric pattern
+        let val = input.value.toUpperCase().replace(/[^A-Za-z0-9]/g,'');
+        let pattern = block.pattern;
+        let newVal='';
+        for(let i=0;i<val.length && i<pattern.length;i++){
+          if(pattern[i]==='A') newVal+=val[i].replace(/[^A-Z]/,'');
+          else newVal+=val[i].replace(/[^0-9]/,'');
+        }
+        input.value=newVal;
+      } else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
+
       if(input.value.length===block.length && idx<inputs.length-1){
         inputs[idx+1].input.focus();
       }
@@ -84,9 +95,9 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
     });
 
     if(delimiters[idx]){
-      const span=document.createElement('span');
-      span.textContent=delimiters[idx];
-      span.className='delimiter';
+      const span = document.createElement('span');
+      span.textContent = delimiters[idx];
+      span.className = 'delimiter';
       container.appendChild(span);
     }
   });
@@ -97,7 +108,7 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   }
 
   function validate(){
-    let valid=true;
+    let valid = true;
     inputs.forEach(b=>{
       if(b.input.value.length!==b.block.length){
         b.input.classList.add('invalid'); valid=false;
@@ -121,7 +132,7 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
     savedContainer.innerHTML='';
     let stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
     if(stored.length===0) return;
-    const label=document.createElement('span');
+    const label = document.createElement('span');
     label.className='saved-label';
     label.textContent='Saved:';
     savedContainer.appendChild(label);
@@ -138,7 +149,7 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
     let pos=0;
     inputs.forEach(b=>{
       b.input.value = val.slice(pos,pos+b.block.length);
-      pos += b.block.length;
+      pos+=b.block.length;
     });
     updateHidden();
   }
@@ -154,6 +165,8 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
 }
 
 // ===== Initialize fields =====
+
+// DOB: DD-MMM-YYYY
 const dob = createBlockField(
   'dob-field',
   [{length:2,type:'N'},{length:3,type:'A'},{length:4,type:'N'}],
@@ -161,16 +174,25 @@ const dob = createBlockField(
   'pattern_DOB'
 );
 
+// Postal: ANA NAN
 const postal = createBlockField(
   'postal-field',
-  [{length:3,type:'ANA'},{length:3,type:'NAN'}],
+  [
+    {length:3,type:'A/N', pattern:['A','N','A']},
+    {length:3,type:'A/N', pattern:['N','A','N']}
+  ],
   [' '],
   'pattern_Postal'
 );
 
+// RAMQ: AAAA NNNN NNNN
 const ramq = createBlockField(
   'ramq-field',
-  [{length:4,type:'A'},{length:4,type:'N'},{length:4,type:'N'}],
+  [
+    {length:4,type:'A'},
+    {length:4,type:'N'},
+    {length:4,type:'N'}
+  ],
   [' ',' '],
   'pattern_RAMQ'
 );
