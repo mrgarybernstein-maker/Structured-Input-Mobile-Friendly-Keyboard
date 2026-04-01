@@ -69,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const boxes = [];
     const tokens = pattern.split("").filter(t => t==="A"||t==="N"||t==="X");
 
-    // create visible boxes
     pattern.split("").forEach(token => {
       if (token==="A"||token==="N"||token==="X") {
         const box = document.createElement("div");
@@ -85,7 +84,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // hidden input
     const input = document.createElement("input");
     input.className = "hidden-input";
     input.setAttribute("autocomplete", "off");
@@ -93,8 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
     input.setAttribute("autocapitalize", "characters");
     input.setAttribute("spellcheck", "false");
     input.maxLength = tokens.length;
-    input.inputType = "text";
-
     field.appendChild(input);
 
     function renderBoxes() {
@@ -148,9 +144,23 @@ document.addEventListener("DOMContentLoaded", () => {
       savedContainer.appendChild(chip);
     }
 
-    input.addEventListener("input",()=>{
-      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
-      renderBoxes();
+    input.addEventListener("input", () => {
+      let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+      if(val.length > tokens.length) val = val.slice(0, tokens.length);
+      input.value = val;
+
+      // Update visible boxes
+      for(let i=0;i<tokens.length;i++){
+        boxes[i].textContent = val[i] || "";
+        boxes[i].classList.remove("invalid");
+      }
+
+      // FORCE last box overwrite for iOS
+      if(val.length === tokens.length){
+        boxes[tokens.length-1].textContent = val[tokens.length-1];
+      }
+
+      validateBoxes();
       saveValue();
     });
 
@@ -158,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if(e.key==="Backspace") setTimeout(renderBoxes,0);
     });
 
-    // focus visible boxes
     container.addEventListener("click",()=>input.focus());
 
     renderChips();
@@ -182,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("report").innerText=output;
     if(!allValid) return;
     fields.forEach(f=>f.input.value="");
-    fields.forEach(f=>renderBoxes(f));
+    fields.forEach(f=>f.boxes.forEach(b=>b.textContent=""));
   };
 
   window.clearForm = ()=>{
@@ -197,6 +206,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
 </body>
 </html>
