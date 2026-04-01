@@ -2,16 +2,16 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine v4</title>
+<title>Pro Input Engine v5</title>
 <style>
 body { font-family: Arial; padding: 20px; }
 .field { margin-bottom: 25px; }
 .label { font-weight: bold; margin-bottom: 8px; display: block; }
-input { 
-  font-size: 18px; padding: 6px; width: 180px; 
-  margin-right: 8px; border: 1px solid #ccc; border-radius: 4px;
+.char-box {
+  width: 30px; font-size: 18px; text-align: center; padding: 6px;
+  margin-right: 4px; border: 1px solid #ccc; border-radius: 4px;
 }
-input.invalid { border-color: red; background: #ffd6d6; }
+.char-box.invalid { border-color: red; background: #ffd6d6; }
 .saved-values { margin-top: 6px; font-size: 13px; }
 .saved-label { color: #666; margin-bottom: 3px; display: block; }
 .saved-chip {
@@ -27,23 +27,20 @@ button { margin-right: 10px; padding: 10px 15px; }
 </head>
 <body>
 
-<div class="field">
-  <label class="label" for="dob">Date of Birth (DD-MMM-YYYY)</label>
-  <input id="dob" type="text" autocomplete="bday" inputmode="numeric" maxlength="11" placeholder="DD-MMM-YYYY">
-  <div id="dob-saved" class="saved-values"></div>
+<div class="field" id="dob-field">
+  <label class="label">Date of Birth (DD-MMM-YYYY)</label>
 </div>
+<div class="saved-values" id="dob-saved"></div>
 
-<div class="field">
-  <label class="label" for="postal">Postal Code (ANA NAN)</label>
-  <input id="postal" type="text" autocomplete="postal-code" inputmode="text" maxlength="7" placeholder="H0H 0H0">
-  <div id="postal-saved" class="saved-values"></div>
+<div class="field" id="postal-field">
+  <label class="label">Postal Code (ANA NAN)</label>
 </div>
+<div class="saved-values" id="postal-saved"></div>
 
-<div class="field">
-  <label class="label" for="ramq">RAMQ (AAAA NNNN NNNN)</label>
-  <input id="ramq" type="text" autocomplete="off" inputmode="text" maxlength="13" placeholder="AAAA 1234 1234">
-  <div id="ramq-saved" class="saved-values"></div>
+<div class="field" id="ramq-field">
+  <label class="label">RAMQ (AAAA NNNN NNNN)</label>
 </div>
+<div class="saved-values" id="ramq-saved"></div>
 
 <br>
 <button id="submit-btn">Submit</button>
@@ -52,45 +49,75 @@ button { margin-right: 10px; padding: 10px 15px; }
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-// ================= Helper Functions =================
-function createField(id, storageKey, pattern, placeholder) {
-  const input = document.getElementById(id);
-  const savedContainer = document.getElementById(id+'-saved');
+// ========== Helper Functions ==========
+function createCharInputs(containerId, pattern, storageKey) {
+  const container = document.getElementById(containerId);
+  const savedContainer = document.getElementById(containerId+'-saved');
+  const boxes = [];
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type='hidden';
+  container.appendChild(hiddenInput);
 
-  // Live formatting & validation
-  function formatAndValidate() {
-    let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
-    let formatted='';
-    let valid=true;
-    let j=0;
-    for(let i=0;i<pattern.length;i++){
-      if(pattern[i]==='N'){
-        if(val[j] && /\d/.test(val[j])) formatted+=val[j++];
-        else { valid=false; break; }
-      } else if(pattern[i]==='A'){
-        if(val[j] && /[A-Z]/.test(val[j])) formatted+=val[j++];
-        else { valid=false; break; }
-      } else {
-        formatted += pattern[i];
-      }
+  pattern.split('').forEach((p,i)=>{
+    if(p==='N' || p==='A'){
+      const input = document.createElement('input');
+      input.type='text';
+      input.maxLength=1;
+      input.className='char-box';
+      input.inputMode = p==='N'?'numeric':'text';
+      container.appendChild(input);
+      boxes.push({input, type:p});
+      input.addEventListener('input', ()=>{
+        if(input.value.length>0){
+          input.value = p==='N'?input.value.replace(/\D/,''):input.value.replace(/[^A-Za-z]/,'').toUpperCase();
+          // auto-advance
+          let next = boxes.findIndex(b=>b.input===input)+1;
+          if(next<boxes.length) boxes[next].input.focus();
+        }
+        updateHidden();
+      });
+      input.addEventListener('keydown',(e)=>{
+        if(e.key==='Backspace' && input.value===''){
+          let prev = boxes.findIndex(b=>b.input===input)-1;
+          if(prev>=0) boxes[prev].input.focus();
+        }
+      });
+    } else {
+      // static delimiter
+      const span = document.createElement('span');
+      span.textContent=p;
+      span.style.marginRight='2px';
+      container.appendChild(span);
     }
-    input.value = formatted;
-    input.classList.toggle('invalid', !valid);
-    return valid && formatted.length===pattern.length;
+  });
+
+  function updateHidden(){
+    hiddenInput.value = boxes.map(b=>b.input.value).join('');
+    validate();
   }
 
-  function saveValue() {
-    if(formatAndValidate()){
+  function validate(){
+    let valid = true;
+    boxes.forEach(b=>{
+      if(b.type==='N' && !/\d/.test(b.input.value)) { b.input.classList.add('invalid'); valid=false;}
+      else if(b.type==='A' && !/[A-Z]/.test(b.input.value)) { b.input.classList.add('invalid'); valid=false;}
+      else b.input.classList.remove('invalid');
+    });
+    return valid && boxes.every(b=>b.input.value.length>0);
+  }
+
+  function saveValue(){
+    if(validate()){
       let stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
-      if(!stored.includes(input.value)) stored.unshift(input.value);
-      localStorage.setItem(storageKey, JSON.stringify(stored.slice(0,5))); // max 5 entries
+      if(!stored.includes(hiddenInput.value)) stored.unshift(hiddenInput.value);
+      localStorage.setItem(storageKey, JSON.stringify(stored.slice(0,5)));
       renderChips();
       return true;
     }
     return false;
   }
 
-  function renderChips() {
+  function renderChips(){
     savedContainer.innerHTML='';
     let stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
     if(stored.length===0) return;
@@ -102,59 +129,53 @@ function createField(id, storageKey, pattern, placeholder) {
       const chip=document.createElement('span');
       chip.className='saved-chip';
       chip.textContent=v;
-      chip.onclick=()=>{ input.value=v; formatAndValidate(); };
+      chip.onclick=()=>{ fillFromValue(v); };
       savedContainer.appendChild(chip);
     });
   }
 
-  input.addEventListener('input', formatAndValidate);
-  input.addEventListener('blur', saveValue);
+  function fillFromValue(val){
+    let i=0;
+    boxes.forEach(b=>{
+      b.input.value = val[i++] || '';
+    });
+    updateHidden();
+  }
+
+  function clearAll(){
+    boxes.forEach(b=>b.input.value='');
+    updateHidden();
+    renderChips();
+  }
 
   renderChips();
-
-  return {input, saveValue, renderChips};
+  return {saveValue, clearAll, hiddenInput};
 }
 
-// ================= Initialize Fields =================
-const dobField = createField('dob','pattern_DOB','NNNAAANNNN','DD-MMM-YYYY');
-const postalField = createField('postal','pattern_Postal','ANANAN','ANA NAN'); // will insert space in formatting
-const ramqField = createField('ramq','pattern_RAMQ','AAAANNNNNNNN','AAAA 1234 1234');
+// ========== Initialize Fields ==========
+const dob = createCharInputs('dob-field','NN-AAA-NNNN','pattern_DOB');
+const postal = createCharInputs('postal-field','ANA NAN','pattern_Postal');
+const ramq = createCharInputs('ramq-field','AAAA NNNN NNNN','pattern_RAMQ');
 
-// Special formatting for postal code (insert space)
-postalField.input.addEventListener('input', ()=>{
-  let v = postalField.input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(v.length>3) v=v.slice(0,3)+' '+v.slice(3,6);
-  postalField.input.value=v;
-});
-
-// Special formatting for RAMQ (insert spaces)
-ramqField.input.addEventListener('input', ()=>{
-  let v = ramqField.input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(v.length>4 && v.length<=8) v=v.slice(0,4)+' '+v.slice(4);
-  else if(v.length>8) v=v.slice(0,4)+' '+v.slice(4,8)+' '+v.slice(8,12);
-  ramqField.input.value=v;
-});
-
-// ================= Submit & Clear =================
+// ========== Submit & Clear ==========
 document.getElementById('submit-btn').addEventListener('click',()=>{
-  const allValid = dobField.saveValue() & postalField.saveValue() & ramqField.saveValue();
+  const allValid = dob.saveValue() & postal.saveValue() & ramq.saveValue();
   const report = `
-Date of Birth: ${dobField.input.value}
-Postal Code: ${postalField.input.value}
-RAMQ: ${ramqField.input.value}`;
+Date of Birth: ${dob.hiddenInput.value}
+Postal Code: ${postal.hiddenInput.value}
+RAMQ: ${ramq.hiddenInput.value}`;
   document.getElementById('report').innerText = report;
   if(allValid){
-    dobField.input.value='';
-    postalField.input.value='';
-    ramqField.input.value='';
+    dob.clearAll();
+    postal.clearAll();
+    ramq.clearAll();
   }
 });
 
 document.getElementById('clear-btn').addEventListener('click',()=>{
-  [dobField, postalField, ramqField].forEach(f=>{
-    localStorage.removeItem(f.input.id==='dob'?'pattern_DOB':f.input.id==='postal'?'pattern_Postal':'pattern_RAMQ');
-    f.input.value='';
-    f.renderChips();
+  [dob,postal,ramq].forEach(f=>{
+    localStorage.removeItem(f===dob?'pattern_DOB':f===postal?'pattern_Postal':'pattern_RAMQ');
+    f.clearAll();
   });
   document.getElementById('report').innerText='';
 });
