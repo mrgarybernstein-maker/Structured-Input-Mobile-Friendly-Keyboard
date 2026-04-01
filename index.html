@@ -1,19 +1,31 @@
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine v9</title>
+<title>Pro Input Engine v10</title>
 <style>
 body { font-family: Arial; padding: 20px; }
-.field { margin-bottom: 25px; }
-.label { font-weight: bold; margin-bottom: 8px; display: block; }
+.field { 
+  margin-bottom: 25px; 
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  min-height: 40px;
+}
+.label { font-weight: bold; margin-bottom: 8px; display: block; width: 100%; }
 .block-input {
-  width: 50px; font-size: 18px; text-align: center; padding: 6px;
-  margin-right: 4px; border: 1px solid #ccc; border-radius: 4px;
+  width: 40px; 
+  font-size: 18px; 
+  text-align: center; 
+  padding: 6px;
+  margin-right: 4px; 
+  border: 1px solid #ccc; 
+  border-radius: 4px;
 }
 .block-input.invalid { border-color: red; background: #ffd6d6; }
 .delimiter { font-size: 18px; margin-right: 4px; }
-.saved-values { margin-top: 6px; font-size: 13px; }
+.saved-values { margin-top: 6px; font-size: 13px; width: 100%; }
 .saved-label { color: #666; margin-bottom: 3px; display: block; }
 .saved-chip {
   display: inline-block;
@@ -50,8 +62,8 @@ button { margin-right: 10px; padding: 10px 15px; }
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-// ===== Utility to create block inputs =====
-function createBlockField(containerId, blocks, delimiters, storageKey) {
+// ===== Utility to create per-character inputs =====
+function createBlockField(containerId, pattern, delimiters, storageKey) {
   const container = document.getElementById(containerId);
   const savedContainer = document.getElementById(containerId+'-saved');
   const inputs = [];
@@ -59,37 +71,37 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   hiddenInput.type='hidden';
   container.appendChild(hiddenInput);
 
-  blocks.forEach((block, idx)=>{
+  // insert inputs and delimiters
+  pattern.forEach((type,i)=>{
     const input = document.createElement('input');
     input.type='text';
-    input.maxLength = 1; // one character per input
-    input.className = 'block-input';
-    input.inputMode = block==='N'?'numeric':'text';
+    input.maxLength=1;
+    input.className='block-input';
+    input.inputMode = (type==='N') ? 'numeric' : 'text';
     container.appendChild(input);
-    inputs.push({input, type:block});
+    inputs.push({input,type});
 
     input.addEventListener('input', ()=>{
       if(input.value.length>0){
-        if(block==='N') input.value=input.value.replace(/\D/g,'');
+        if(type==='N') input.value=input.value.replace(/\D/g,'');
         else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
-        // auto advance
-        const currentIdx = inputs.findIndex(b=>b.input===input);
-        if(currentIdx<inputs.length-1) inputs[currentIdx+1].input.focus();
+        const idx = inputs.findIndex(b=>b.input===input);
+        if(idx<inputs.length-1) inputs[idx+1].input.focus();
       }
       updateHidden();
     });
 
     input.addEventListener('keydown', (e)=>{
       if(e.key==='Backspace' && input.value.length===0){
-        const currentIdx = inputs.findIndex(b=>b.input===input);
-        if(currentIdx>0) inputs[currentIdx-1].input.focus();
+        const idx = inputs.findIndex(b=>b.input===input);
+        if(idx>0) inputs[idx-1].input.focus();
       }
     });
 
-    if(delimiters[idx]){
-      const span=document.createElement('span');
+    if(delimiters[i]){
+      const span = document.createElement('span');
       span.className='delimiter';
-      span.textContent = delimiters[idx];
+      span.textContent = delimiters[i];
       container.appendChild(span);
     }
   });
@@ -157,21 +169,20 @@ function createBlockField(containerId, blocks, delimiters, storageKey) {
   return {saveValue, clearAll, hiddenInput};
 }
 
-// ===== Define fields =====
-
-// DOB: DD-MMM-YYYY (3 blocks)
-const dobPattern = ['N','N','A','A','A','N','N','N','N']; // 2 digits, 3 letters, 4 digits
-const dobDelims = [null,null,'-','-']; // inserted visually after positions
+// ===== Initialize Fields =====
+// DOB: DD-MMM-YYYY -> 2 digits, 3 letters, 4 digits
+const dobPattern = ['N','N','A','A','A','N','N','N','N'];
+const dobDelims = [null,null,'-','-','-','','','',''];
 const dob = createBlockField('dob-field', dobPattern, dobDelims, 'pattern_DOB');
 
-// Postal: ANA NAN (6 inputs)
+// Postal: ANA NAN -> 6 inputs with space after 3
 const postalPattern = ['A','N','A','N','A','N'];
-const postalDelims = [null,null,' ',null,null]; // space after 3rd char
+const postalDelims = [null,null,' ',null,null,null];
 const postal = createBlockField('postal-field', postalPattern, postalDelims, 'pattern_Postal');
 
-// RAMQ: AAAA NNNN NNNN (12 inputs)
+// RAMQ: AAAA NNNN NNNN -> 12 inputs, spaces after 4 & 8
 const ramqPattern = ['A','A','A','A','N','N','N','N','N','N','N','N'];
-const ramqDelims = [null,null,null,' ',null,null,null,' ',null,null,null,null]; // spaces after 4th and 8th
+const ramqDelims = [null,null,null,' ',null,null,null,' ',null,null,null,null];
 const ramq = createBlockField('ramq-field', ramqPattern, ramqDelims, 'pattern_RAMQ');
 
 // ===== Submit & Clear =====
