@@ -1,27 +1,15 @@
-
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Input Engine v10</title>
+<title>Pro Input Engine v11</title>
 <style>
 body { font-family: Arial; padding: 20px; }
-.field { 
-  margin-bottom: 25px; 
-  display: flex; 
-  flex-wrap: wrap; 
-  align-items: center; 
-  min-height: 40px;
-}
+.field { margin-bottom: 25px; display: flex; flex-wrap: wrap; align-items: center; min-height: 40px; }
 .label { font-weight: bold; margin-bottom: 8px; display: block; width: 100%; }
 .block-input {
-  width: 40px; 
-  font-size: 18px; 
-  text-align: center; 
-  padding: 6px;
-  margin-right: 4px; 
-  border: 1px solid #ccc; 
-  border-radius: 4px;
+  width: 40px; font-size: 18px; text-align: center; padding: 6px;
+  margin-right: 4px; border: 1px solid #ccc; border-radius: 4px;
 }
 .block-input.invalid { border-color: red; background: #ffd6d6; }
 .delimiter { font-size: 18px; margin-right: 4px; }
@@ -62,150 +50,139 @@ button { margin-right: 10px; padding: 10px 15px; }
 <div id="report" style="margin-top:20px; font-weight:bold;"></div>
 
 <script>
-// ===== Utility to create per-character inputs =====
-function createBlockField(containerId, pattern, delimiters, storageKey) {
-  const container = document.getElementById(containerId);
-  const savedContainer = document.getElementById(containerId+'-saved');
-  const inputs = [];
-  const hiddenInput = document.createElement('input');
-  hiddenInput.type='hidden';
+// ===== Platform detection =====
+const isIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isDesktop = !isIphone;
+
+// ===== Utility: saved chips =====
+function renderSavedChips(containerId, storageKey, inputs) {
+  const container = document.getElementById(containerId+'-saved');
+  container.innerHTML='';
+  const stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
+  if(stored.length===0) return;
+  const label=document.createElement('span');
+  label.className='saved-label';
+  label.textContent='Saved:';
+  container.appendChild(label);
+  stored.forEach(v=>{
+    const chip=document.createElement('span');
+    chip.className='saved-chip';
+    chip.textContent=v;
+    chip.onclick=()=>fillInputsFromValue(inputs,v);
+    container.appendChild(chip);
+  });
+}
+function fillInputsFromValue(inputs,val){
+  let pos=0;
+  inputs.forEach(b=>{ b.input.value=val[pos]||''; pos++; });
+}
+
+// ===== Core input engine =====
+function createBlockField(containerId, pattern, delimiters, storageKey){
+  const container=document.getElementById(containerId);
+  const inputs=[];
+  const hiddenInput=document.createElement('input'); hiddenInput.type='hidden';
   container.appendChild(hiddenInput);
 
-  // insert inputs and delimiters
   pattern.forEach((type,i)=>{
-    const input = document.createElement('input');
-    input.type='text';
-    input.maxLength=1;
-    input.className='block-input';
-    input.inputMode = (type==='N') ? 'numeric' : 'text';
+    const input=document.createElement('input');
+    input.type='text'; input.maxLength=1; input.className='block-input';
+    input.inputMode=(type==='N')?'numeric':'text';
     container.appendChild(input);
     inputs.push({input,type});
 
-    input.addEventListener('input', ()=>{
+    input.addEventListener('input',()=>{
       if(input.value.length>0){
         if(type==='N') input.value=input.value.replace(/\D/g,'');
         else input.value=input.value.replace(/[^A-Za-z]/g,'').toUpperCase();
         const idx = inputs.findIndex(b=>b.input===input);
         if(idx<inputs.length-1) inputs[idx+1].input.focus();
       }
-      updateHidden();
+      hiddenInput.value=inputs.map(b=>b.input.value).join('');
     });
-
-    input.addEventListener('keydown', (e)=>{
+    input.addEventListener('keydown', e=>{
       if(e.key==='Backspace' && input.value.length===0){
-        const idx = inputs.findIndex(b=>b.input===input);
+        const idx=inputs.findIndex(b=>b.input===input);
         if(idx>0) inputs[idx-1].input.focus();
       }
     });
-
     if(delimiters[i]){
-      const span = document.createElement('span');
-      span.className='delimiter';
-      span.textContent = delimiters[i];
-      container.appendChild(span);
+      const span=document.createElement('span'); span.className='delimiter';
+      span.textContent=delimiters[i]; container.appendChild(span);
     }
   });
 
-  function updateHidden(){
-    hiddenInput.value = inputs.map(b=>b.input.value).join('');
-    validate();
-  }
-
   function validate(){
-    let valid = true;
+    let valid=true;
     inputs.forEach(b=>{
-      if(b.input.value.length===0){
-        b.input.classList.add('invalid');
-        valid=false;
-      } else b.input.classList.remove('invalid');
+      if(b.input.value.length===0){ b.input.classList.add('invalid'); valid=false; }
+      else b.input.classList.remove('invalid');
     });
     return valid;
   }
-
   function saveValue(){
     if(validate()){
-      let stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
+      let stored=JSON.parse(localStorage.getItem(storageKey)||"[]");
       if(!stored.includes(hiddenInput.value)) stored.unshift(hiddenInput.value);
-      localStorage.setItem(storageKey, JSON.stringify(stored.slice(0,5)));
-      renderChips();
+      localStorage.setItem(storageKey,JSON.stringify(stored.slice(0,5)));
+      renderSavedChips(containerId, storageKey, inputs);
       return true;
     }
     return false;
   }
-
-  function renderChips(){
-    savedContainer.innerHTML='';
-    let stored = JSON.parse(localStorage.getItem(storageKey)||"[]");
-    if(stored.length===0) return;
-    const label=document.createElement('span');
-    label.className='saved-label';
-    label.textContent='Saved:';
-    savedContainer.appendChild(label);
-    stored.forEach(v=>{
-      const chip=document.createElement('span');
-      chip.className='saved-chip';
-      chip.textContent=v;
-      chip.onclick=()=>fillFromValue(v);
-      savedContainer.appendChild(chip);
-    });
-  }
-
-  function fillFromValue(val){
-    let pos=0;
-    inputs.forEach(b=>{
-      b.input.value = val[pos]||'';
-      pos++;
-    });
-    updateHidden();
-  }
-
   function clearAll(){
     inputs.forEach(b=>b.input.value='');
-    updateHidden();
-    renderChips();
+    hiddenInput.value='';
+    renderSavedChips(containerId, storageKey, inputs);
   }
-
-  renderChips();
-  return {saveValue, clearAll, hiddenInput};
+  renderSavedChips(containerId, storageKey, inputs);
+  return {inputs,saveValue,clearAll,hiddenInput};
 }
 
-// ===== Initialize Fields =====
-// DOB: DD-MMM-YYYY -> 2 digits, 3 letters, 4 digits
-const dobPattern = ['N','N','A','A','A','N','N','N','N'];
-const dobDelims = [null,null,'-','-','-','','','',''];
-const dob = createBlockField('dob-field', dobPattern, dobDelims, 'pattern_DOB');
+// ===== iPhone-specific setup =====
+function setupIphoneFields(){
+  // iPhone-friendly: larger boxes, simple auto-advance
+  dob=createBlockField('dob-field',['N','N','A','A','A','N','N','N','N'],['-','-'], 'pattern_DOB');
+  postal=createBlockField('postal-field',['A','N','A','N','A','N'],[' ',''], 'pattern_Postal');
+  ramq=createBlockField('ramq-field',['A','A','A','A','N','N','N','N','N','N','N','N'],[' ',' '], 'pattern_RAMQ');
+  attachSubmitClear();
+}
 
-// Postal: ANA NAN -> 6 inputs with space after 3
-const postalPattern = ['A','N','A','N','A','N'];
-const postalDelims = [null,null,' ',null,null,null];
-const postal = createBlockField('postal-field', postalPattern, postalDelims, 'pattern_Postal');
-
-// RAMQ: AAAA NNNN NNNN -> 12 inputs, spaces after 4 & 8
-const ramqPattern = ['A','A','A','A','N','N','N','N','N','N','N','N'];
-const ramqDelims = [null,null,null,' ',null,null,null,' ',null,null,null,null];
-const ramq = createBlockField('ramq-field', ramqPattern, ramqDelims, 'pattern_RAMQ');
+// ===== Desktop/Chrome setup =====
+function setupDesktopFields(){
+  // Desktop: per-character validation, chips, auto-advance
+  dob=createBlockField('dob-field',['N','N','A','A','A','N','N','N','N'],['-','-'], 'pattern_DOB');
+  postal=createBlockField('postal-field',['A','N','A','N','A','N'],[' ',''], 'pattern_Postal');
+  ramq=createBlockField('ramq-field',['A','A','A','A','N','N','N','N','N','N','N','N'],[' ',' '], 'pattern_RAMQ');
+  attachSubmitClear();
+}
 
 // ===== Submit & Clear =====
-document.getElementById('submit-btn').addEventListener('click', ()=>{
-  const allValid = dob.saveValue() & postal.saveValue() & ramq.saveValue();
-  const report = `
+function attachSubmitClear(){
+  document.getElementById('submit-btn').onclick=()=>{
+    const allValid=dob.saveValue() & postal.saveValue() & ramq.saveValue();
+    const report=`
 Date of Birth: ${dob.hiddenInput.value}
 Postal Code: ${postal.hiddenInput.value}
 RAMQ: ${ramq.hiddenInput.value}`;
-  document.getElementById('report').innerText = report;
-  if(allValid){
-    dob.clearAll();
-    postal.clearAll();
-    ramq.clearAll();
-  }
-});
+    document.getElementById('report').innerText=report;
+    if(allValid){
+      dob.clearAll(); postal.clearAll(); ramq.clearAll();
+    }
+  };
+  document.getElementById('clear-btn').onclick=()=>{
+    [dob,postal,ramq].forEach(f=>{
+      localStorage.removeItem(f===dob?'pattern_DOB':f===postal?'pattern_Postal':'pattern_RAMQ');
+      f.clearAll();
+    });
+    document.getElementById('report').innerText='';
+  };
+}
 
-document.getElementById('clear-btn').addEventListener('click', ()=>{
-  [dob,postal,ramq].forEach(f=>{
-    localStorage.removeItem(f===dob?'pattern_DOB':f===postal?'pattern_Postal':'pattern_RAMQ');
-    f.clearAll();
-  });
-  document.getElementById('report').innerText='';
+// ===== Initialize based on platform =====
+window.addEventListener('DOMContentLoaded', ()=>{
+  if(isIphone) setupIphoneFields();
+  else setupDesktopFields();
 });
 </script>
 </body>
