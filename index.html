@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,6 +142,9 @@
     /* RAMQ: AAAA NNNNNNNN */
     .seg-ramq-a { width: 96px; text-transform: uppercase; }
     .seg-ramq-n { width: 148px; }
+
+    /* SIN: NNN NNN NNN */
+    .seg-sin { width: 84px; }
 
     .sep {
       font-size: 20px;
@@ -334,6 +336,21 @@
 
   <hr class="divider">
 
+  <!-- SIN: NNN NNN NNN -->
+  <div class="field-group">
+    <p class="field-label">Social Insurance Number (SIN)</p>
+    <div class="field-row">
+      <input class="seg seg-sin" id="sin1" type="text" inputmode="numeric" maxlength="3" placeholder="NNN" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="SIN part 1">
+      <span class="sep-space"></span>
+      <input class="seg seg-sin" id="sin2" type="text" inputmode="numeric" maxlength="3" placeholder="NNN" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="SIN part 2">
+      <span class="sep-space"></span>
+      <input class="seg seg-sin" id="sin3" type="text" inputmode="numeric" maxlength="3" placeholder="NNN" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="SIN part 3">
+    </div>
+    <div class="chips" id="chips-sin"></div>
+  </div>
+
+  <hr class="divider">
+
   <!-- POSTAL CODE: A N A  N A N -->
   <div class="field-group">
     <p class="field-label">Postal code</p>
@@ -422,6 +439,7 @@
   const dobM     = document.getElementById('dob-m');
   const dobY     = document.getElementById('dob-y');
   const address_ = document.getElementById('address');
+  const sin      = [1,2,3].map(i => document.getElementById('sin'+i));
   const pc       = [1,2,3,4,5,6].map(i => document.getElementById('pc'+i));
   const ramqA    = document.getElementById('ramq-a');
   const ramqN    = document.getElementById('ramq-n');
@@ -435,6 +453,10 @@
     [dobD,dobM,dobY].forEach(clearErr);
   }
   function populateAddress(val) { address_.value = val; clearErr(address_); }
+  function populateSIN(val)     {
+    const clean = val.replace(/\s/g,'');
+    sin.forEach((el,i) => { el.value = clean.slice(i*3, i*3+3); clearErr(el); });
+  }
   function populatePC(val)      {
     const clean = val.replace(/\s/g,'');
     pc.forEach((el,i) => { el.value = clean[i] || ''; clearErr(el); });
@@ -466,11 +488,16 @@
   autoSeg(dobY, false, true,  address_, dobM);
   dobY.addEventListener('keydown', e => { if (e.key === 'Enter') submitForm(); });
 
+  /* ── SIN ── */
+  sin.forEach((el, i) => {
+    autoSeg(el, false, true, sin[i+1] || pc[0], sin[i-1] || address_);
+  });
+
   /* ── Postal code segments ── */
   const pcTypes = ['alpha','num','alpha','num','alpha','num'];
   pc.forEach((el, i) => {
     const isAlpha = pcTypes[i] === 'alpha';
-    autoSeg(el, isAlpha, !isAlpha, pc[i+1] || ramqA, pc[i-1] || address_);
+    autoSeg(el, isAlpha, !isAlpha, pc[i+1] || ramqA, pc[i-1] || sin[2]);
   });
 
   /* ── RAMQ ── */
@@ -508,6 +535,11 @@
     const addr = address_.value.trim();
     if (!addr)                            return { field: address_, msg: 'Address is required' };
 
+    const sinVal = sin.map(el => el.value.trim());
+    for (let i = 0; i < 3; i++) {
+      if (!/^\d{3}$/.test(sinVal[i])) return { field: sin[i], msg: 'SIN: each group must be 3 digits' };
+    }
+
     const pcVal = pc.map(el => el.value.trim().toUpperCase());
     for (let i = 0; i < 6; i++) {
       if (!pcVal[i]) return { field: pc[i], msg: 'Complete the postal code' };
@@ -526,7 +558,7 @@
   /* ── Submit ── */
   function submitForm() {
     clearMsg();
-    [name_, dobD, dobM, dobY, address_, ...pc, ramqA, ramqN].forEach(clearErr);
+    [name_, dobD, dobM, dobY, address_, ...sin, ...pc, ramqA, ramqN].forEach(clearErr);
 
     const err = validate();
     if (err) {
@@ -540,9 +572,12 @@
     const dobStr = `${dobD.value.padStart(2,'0')}-${dobM.value.toUpperCase()}-${dobY.value}`;
     const ramqStr= `${ramqA.value.toUpperCase()} ${ramqN.value}`;
 
+    const sinStr  = sin.map(el => el.value).join(' ');
+
     addToHistory('reg_name',    name_.value.trim());
     addToHistory('reg_dob',     dobStr);
     addToHistory('reg_address', address_.value.trim());
+    addToHistory('reg_sin',     sinStr);
     addToHistory('reg_pc',      pcStr);
     addToHistory('reg_ramq',    ramqStr);
 
@@ -550,7 +585,7 @@
     showMsg(`Registered: ${name_.value.trim()} · ${dobStr} · ${ramqStr}`, 'ok');
 
     /* Clear all fields */
-    [name_, dobD, dobM, dobY, address_, ...pc, ramqA, ramqN].forEach(el => el.value = '');
+    [name_, dobD, dobM, dobY, address_, ...sin, ...pc, ramqA, ramqN].forEach(el => el.value = '');
     name_.focus();
   }
 
@@ -565,6 +600,7 @@
     renderChips('chips-name',    'reg_name',    populateName);
     renderChips('chips-dob',     'reg_dob',     populateDob);
     renderChips('chips-address', 'reg_address', populateAddress);
+    renderChips('chips-sin',     'reg_sin',     populateSIN);
     renderChips('chips-pc',      'reg_pc',      populatePC);
     renderChips('chips-ramq',    'reg_ramq',    populateRAMQ);
   }
