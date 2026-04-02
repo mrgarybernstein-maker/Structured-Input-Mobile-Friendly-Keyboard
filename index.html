@@ -2,44 +2,30 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stable Input Engine v12</title>
+<title>Stable Input Engine v13</title>
+
 <style>
 body { font-family: Arial; padding: 20px; }
 
-.field {
-  margin-bottom: 25px;
-}
+.field { margin-bottom: 20px; }
 
-.label {
-  font-weight: bold;
-  margin-bottom: 8px;
+label {
   display: block;
+  font-weight: bold;
+  margin-bottom: 6px;
 }
 
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.box {
-  width: 42px;
-  height: 42px;
-  text-align: center;
+input {
+  width: 100%;
+  padding: 10px;
   font-size: 18px;
-  margin-right: 4px;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
 
-.box.invalid {
+input.invalid {
   border-color: red;
   background: #ffd6d6;
-}
-
-.delim {
-  margin-right: 6px;
-  font-weight: bold;
 }
 
 button {
@@ -48,21 +34,22 @@ button {
 }
 </style>
 </head>
+
 <body>
 
 <div class="field">
-  <span class="label">Date of Birth (DD-MMM-YYYY)</span>
-  <div id="dob" class="row"></div>
+  <label>DOB (DD-MMM-YYYY)</label>
+  <input id="dob" placeholder="31-MAR-1980">
 </div>
 
 <div class="field">
-  <span class="label">Postal Code (ANA NAN)</span>
-  <div id="postal" class="row"></div>
+  <label>Postal Code (ANA NAN)</label>
+  <input id="postal" placeholder="H2X 1Y4">
 </div>
 
 <div class="field">
-  <span class="label">RAMQ (AAAA NNNN NNNN)</span>
-  <div id="ramq" class="row"></div>
+  <label>RAMQ (AAAA NNNN NNNN)</label>
+  <input id="ramq" placeholder="ABCD 1234 5678">
 </div>
 
 <button id="submit">Submit</button>
@@ -71,122 +58,107 @@ button {
 <div id="report" style="margin-top:20px;font-weight:bold;"></div>
 
 <script>
-// ===== CORE BUILDER =====
-function buildField(containerId, pattern, delimiters) {
-  const container = document.getElementById(containerId);
-  const inputs = [];
+// ===== FORMATTERS =====
 
-  pattern.forEach((type, i) => {
-    const input = document.createElement("input");
-    input.className = "box";
-    input.maxLength = 1;
-    input.inputMode = type === "N" ? "numeric" : "text";
+// DOB: auto format DD-MMM-YYYY
+function formatDOB(value) {
+  value = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 
-    container.appendChild(input);
-    inputs.push({ input, type });
+  let d = value.slice(0,2);
+  let m = value.slice(2,5);
+  let y = value.slice(5,9);
 
-    // auto advance
-    input.addEventListener("input", () => {
-      if (input.value.length > 0) {
-        if (type === "N") {
-          input.value = input.value.replace(/\D/g, "");
-        } else {
-          input.value = input.value.replace(/[^A-Za-z]/g, "").toUpperCase();
-        }
+  let out = d;
+  if (m) out += "-" + m;
+  if (y) out += "-" + y;
 
-        const idx = inputs.findIndex(b => b.input === input);
-        if (idx < inputs.length - 1) {
-          inputs[idx + 1].input.focus();
-        }
-      }
-    });
-
-    // backspace navigation
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && input.value === "") {
-        const idx = inputs.findIndex(b => b.input === input);
-        if (idx > 0) inputs[idx - 1].input.focus();
-      }
-    });
-
-    // delimiter
-    if (delimiters[i]) {
-      const d = document.createElement("span");
-      d.className = "delim";
-      d.textContent = delimiters[i];
-      container.appendChild(d);
-    }
-  });
-
-  function getValue() {
-    return inputs.map(b => b.input.value).join("");
-  }
-
-  function validate() {
-    let ok = true;
-    inputs.forEach(b => {
-      if (!b.input.value) {
-        b.input.classList.add("invalid");
-        ok = false;
-      } else {
-        b.input.classList.remove("invalid");
-      }
-    });
-    return ok;
-  }
-
-  function clear() {
-    inputs.forEach(b => b.input.value = "");
-  }
-
-  return { getValue, validate, clear };
+  return out;
 }
 
-// ===== BUILD FIELDS =====
-
-// DOB: DD-MMM-YYYY
-const dob = buildField(
-  "dob",
-  ['N','N','A','A','A','N','N','N','N'],
-  [null, '-', null, null, '-', null, null, null, null]
-);
-
 // Postal: ANA NAN
-const postal = buildField(
-  "postal",
-  ['A','N','A','N','A','N'],
-  [null, null, ' ', null, null, null]
-);
+function formatPostal(value) {
+  value = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+  let p1 = value.slice(0,3);
+  let p2 = value.slice(3,6);
+
+  return p2 ? p1 + " " + p2 : p1;
+}
 
 // RAMQ: AAAA NNNN NNNN
-const ramq = buildField(
-  "ramq",
-  ['A','A','A','A','N','N','N','N','N','N','N','N'],
-  [null,null,null,' ',null,null,null,' ',null,null,null,null]
-);
+function formatRAMQ(value) {
+  value = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+  let a = value.slice(0,4);
+  let n1 = value.slice(4,8);
+  let n2 = value.slice(8,12);
+
+  let out = a;
+  if (n1) out += " " + n1;
+  if (n2) out += " " + n2;
+
+  return out;
+}
+
+// ===== VALIDATION =====
+
+function validateDOB(v) {
+  return /^\d{2}-[A-Z]{3}-\d{4}$/.test(v);
+}
+
+function validatePostal(v) {
+  return /^[A-Z]\d[A-Z] \d[A-Z]\d$/.test(v);
+}
+
+function validateRAMQ(v) {
+  return /^[A-Z]{4} \d{4} \d{4}$/.test(v);
+}
+
+// ===== INPUT EVENTS =====
+
+const dob = document.getElementById("dob");
+const postal = document.getElementById("postal");
+const ramq = document.getElementById("ramq");
+
+dob.addEventListener("input", () => {
+  dob.value = formatDOB(dob.value);
+});
+
+postal.addEventListener("input", () => {
+  postal.value = formatPostal(postal.value);
+});
+
+ramq.addEventListener("input", () => {
+  ramq.value = formatRAMQ(ramq.value);
+});
 
 // ===== BUTTONS =====
+
 document.getElementById("submit").onclick = () => {
-  const v1 = dob.validate();
-  const v2 = postal.validate();
-  const v3 = ramq.validate();
+  const v1 = validateDOB(dob.value);
+  const v2 = validatePostal(postal.value);
+  const v3 = validateRAMQ(ramq.value);
+
+  dob.classList.toggle("invalid", !v1);
+  postal.classList.toggle("invalid", !v2);
+  ramq.classList.toggle("invalid", !v3);
 
   document.getElementById("report").innerText =
-    "DOB: " + dob.getValue() +
-    "\nPostal: " + postal.getValue() +
-    "\nRAMQ: " + ramq.getValue();
+    "DOB: " + dob.value +
+    "\nPostal: " + postal.value +
+    "\nRAMQ: " + ramq.value;
 
   if (v1 && v2 && v3) {
-    dob.clear();
-    postal.clear();
-    ramq.clear();
+    dob.value = "";
+    postal.value = "";
+    ramq.value = "";
   }
 };
 
 document.getElementById("clear").onclick = () => {
-  dob.clear();
-  postal.clear();
-  ramq.clear();
+  dob.value = "";
+  postal.value = "";
+  ramq.value = "";
   document.getElementById("report").innerText = "";
 };
 </script>
