@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stable Input Engine v13</title>
+<title>Input Engine v14</title>
 
 <style>
 body { font-family: Arial; padding: 20px; }
 
-.field { margin-bottom: 20px; }
+.field { margin-bottom: 25px; }
 
 label {
   display: block;
@@ -15,15 +15,24 @@ label {
   margin-bottom: 6px;
 }
 
+.row {
+  display: flex;
+  gap: 8px;
+}
+
 input {
-  width: 100%;
   padding: 10px;
   font-size: 18px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  text-align: center;
 }
 
-input.invalid {
+.small { width: 60px; }
+.medium { width: 80px; }
+.large { width: 100px; }
+
+.invalid {
   border-color: red;
   background: #ffd6d6;
 }
@@ -37,19 +46,48 @@ button {
 
 <body>
 
+<!-- DOB -->
 <div class="field">
-  <label>DOB (DD-MMM-YYYY)</label>
-  <input id="dob" placeholder="31-MAR-1980">
+  <label>DOB (DD MMM YYYY)</label>
+  <div class="row">
+    <input id="dob-dd" class="small" inputmode="numeric" placeholder="31">
+    <input id="dob-mm" class="medium" inputmode="text" placeholder="MAR">
+    <input id="dob-yyyy" class="large" inputmode="numeric" placeholder="1980">
+  </div>
 </div>
 
+<!-- Postal -->
 <div class="field">
   <label>Postal Code (ANA NAN)</label>
-  <input id="postal" placeholder="H2X 1Y4">
+  <div class="row">
+    <input id="p1" class="small" inputmode="text" maxlength="1">
+    <input id="p2" class="small" inputmode="numeric" maxlength="1">
+    <input id="p3" class="small" inputmode="text" maxlength="1">
+    <input id="p4" class="small" inputmode="numeric" maxlength="1">
+    <input id="p5" class="small" inputmode="text" maxlength="1">
+    <input id="p6" class="small" inputmode="numeric" maxlength="1">
+  </div>
 </div>
 
+<!-- RAMQ -->
 <div class="field">
   <label>RAMQ (AAAA NNNN NNNN)</label>
-  <input id="ramq" placeholder="ABCD 1234 5678">
+  <div class="row">
+    <input id="r1" class="small" inputmode="text" maxlength="1">
+    <input id="r2" class="small" inputmode="text" maxlength="1">
+    <input id="r3" class="small" inputmode="text" maxlength="1">
+    <input id="r4" class="small" inputmode="text" maxlength="1">
+
+    <input id="r5" class="small" inputmode="numeric" maxlength="1">
+    <input id="r6" class="small" inputmode="numeric" maxlength="1">
+    <input id="r7" class="small" inputmode="numeric" maxlength="1">
+    <input id="r8" class="small" inputmode="numeric" maxlength="1">
+
+    <input id="r9" class="small" inputmode="numeric" maxlength="1">
+    <input id="r10" class="small" inputmode="numeric" maxlength="1">
+    <input id="r11" class="small" inputmode="numeric" maxlength="1">
+    <input id="r12" class="small" inputmode="numeric" maxlength="1">
+  </div>
 </div>
 
 <button id="submit">Submit</button>
@@ -58,108 +96,62 @@ button {
 <div id="report" style="margin-top:20px;font-weight:bold;"></div>
 
 <script>
-// ===== FORMATTERS =====
+// ===== AUTO ADVANCE =====
+function autoAdvance(inputs, isLetter) {
+  inputs.forEach((input, i) => {
+    input.addEventListener("input", () => {
+      if (input.value.length > 0) {
+        if (isLetter(input)) {
+          input.value = input.value.replace(/[^A-Za-z]/g, "").toUpperCase();
+        } else {
+          input.value = input.value.replace(/\D/g, "");
+        }
+        if (i < inputs.length - 1) inputs[i + 1].focus();
+      }
+    });
 
-// DOB: auto format DD-MMM-YYYY
-function formatDOB(value) {
-  value = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-
-  let d = value.slice(0,2);
-  let m = value.slice(2,5);
-  let y = value.slice(5,9);
-
-  let out = d;
-  if (m) out += "-" + m;
-  if (y) out += "-" + y;
-
-  return out;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && input.value === "" && i > 0) {
+        inputs[i - 1].focus();
+      }
+    });
+  });
 }
 
-// Postal: ANA NAN
-function formatPostal(value) {
-  value = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+// ===== SETUP =====
+const postalInputs = [p1,p2,p3,p4,p5,p6];
+autoAdvance(postalInputs, (inp)=> inp.inputMode==="text");
 
-  let p1 = value.slice(0,3);
-  let p2 = value.slice(3,6);
+const ramqInputs = [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12];
+autoAdvance(ramqInputs, (inp)=> inp.inputMode==="text");
 
-  return p2 ? p1 + " " + p2 : p1;
-}
-
-// RAMQ: AAAA NNNN NNNN
-function formatRAMQ(value) {
-  value = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-
-  let a = value.slice(0,4);
-  let n1 = value.slice(4,8);
-  let n2 = value.slice(8,12);
-
-  let out = a;
-  if (n1) out += " " + n1;
-  if (n2) out += " " + n2;
-
-  return out;
-}
-
-// ===== VALIDATION =====
-
-function validateDOB(v) {
-  return /^\d{2}-[A-Z]{3}-\d{4}$/.test(v);
-}
-
-function validatePostal(v) {
-  return /^[A-Z]\d[A-Z] \d[A-Z]\d$/.test(v);
-}
-
-function validateRAMQ(v) {
-  return /^[A-Z]{4} \d{4} \d{4}$/.test(v);
-}
-
-// ===== INPUT EVENTS =====
-
-const dob = document.getElementById("dob");
-const postal = document.getElementById("postal");
-const ramq = document.getElementById("ramq");
-
-dob.addEventListener("input", () => {
-  dob.value = formatDOB(dob.value);
+// ===== FORMAT DOB =====
+dob_mm.addEventListener("input", () => {
+  dob_mm.value = dob_mm.value.replace(/[^A-Za-z]/g,"").toUpperCase();
+});
+dob_dd.addEventListener("input", () => {
+  dob_dd.value = dob_dd.value.replace(/\D/g,"");
+});
+dob_yyyy.addEventListener("input", () => {
+  dob_yyyy.value = dob_yyyy.value.replace(/\D/g,"");
 });
 
-postal.addEventListener("input", () => {
-  postal.value = formatPostal(postal.value);
-});
+// ===== SUBMIT =====
+submit.onclick = () => {
+  const dob = dob_dd.value + "-" + dob_mm.value + "-" + dob_yyyy.value;
+  const postal = postalInputs.map(i=>i.value).join("");
+  const ramq = ramqInputs.map(i=>i.value).join("");
 
-ramq.addEventListener("input", () => {
-  ramq.value = formatRAMQ(ramq.value);
-});
-
-// ===== BUTTONS =====
-
-document.getElementById("submit").onclick = () => {
-  const v1 = validateDOB(dob.value);
-  const v2 = validatePostal(postal.value);
-  const v3 = validateRAMQ(ramq.value);
-
-  dob.classList.toggle("invalid", !v1);
-  postal.classList.toggle("invalid", !v2);
-  ramq.classList.toggle("invalid", !v3);
-
-  document.getElementById("report").innerText =
-    "DOB: " + dob.value +
-    "\nPostal: " + postal.value +
-    "\nRAMQ: " + ramq.value;
-
-  if (v1 && v2 && v3) {
-    dob.value = "";
-    postal.value = "";
-    ramq.value = "";
-  }
+  report.innerText =
+    "DOB: " + dob +
+    "\nPostal: " + postal +
+    "\nRAMQ: " + ramq;
 };
 
-document.getElementById("clear").onclick = () => {
-  dob.value = "";
-  postal.value = "";
-  ramq.value = "";
-  document.getElementById("report").innerText = "";
+// ===== CLEAR =====
+clear.onclick = () => {
+  document.querySelectorAll("input").forEach(i=>i.value="");
+  report.innerText="";
 };
 </script>
 
