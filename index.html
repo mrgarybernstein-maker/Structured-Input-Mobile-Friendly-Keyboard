@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,44 +7,29 @@
   <title>Patient Registration</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f3;
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      background: #f5f5f3; min-height: 100vh;
+      display: flex; align-items: flex-start; justify-content: center;
       padding: 2rem 1rem;
     }
-
     .card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 2rem;
-      width: 100%;
-      max-width: 480px;
+      background: #fff; border-radius: 16px; padding: 2rem;
+      width: 100%; max-width: 480px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
     }
-
-    h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
-    .subtitle { font-size: 14px; color: #888; margin-bottom: 1.75rem; }
-
+    h1       { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .subtitle{ font-size: 14px; color: #888; margin-bottom: 1.75rem; }
     .field-group { margin-bottom: 1.5rem; }
     .field-label { font-size: 13px; font-weight: 500; color: #555; margin-bottom: 8px; letter-spacing: 0.02em; }
 
-    /* ── Base shared by seg, seg-full, seg-select ── */
+    /* ── Base input/select styles ── */
     .seg, .seg-full, .seg-select {
-      border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
-      background: #fafafa;
-      color: #1a1a1a;
-      font-size: 17px;
-      font-weight: 500;
-      height: 54px;
-      outline: none;
+      border: 1.5px solid #e0e0e0; border-radius: 10px;
+      background: #fafafa; color: #1a1a1a;
+      font-size: 17px; font-weight: 500; height: 54px;
+      outline: none; -webkit-appearance: none;
       transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-      -webkit-appearance: none;
     }
     .seg:focus, .seg-full:focus, .seg-select:focus {
       border-color: #4a90d9; background: #fff;
@@ -52,46 +38,27 @@
     .seg.error, .seg-full.error, .seg-select.error {
       border-color: #e05252; box-shadow: 0 0 0 3px rgba(224,82,82,0.12);
     }
-
-    .seg-full { width: 100%; padding: 13px 14px; }
+    .seg-full  { width: 100%; padding: 13px 14px; }
     .seg-full::placeholder { font-weight: 400; font-size: 14px; color: #bbb; }
-
-    .seg { font-size: 18px; font-weight: 600; text-align: center; padding: 10px 0; min-width: 0; }
+    .seg       { font-size: 18px; font-weight: 600; text-align: center; padding: 10px 0; min-width: 0; }
     .seg::placeholder { font-weight: 400; font-size: 13px; color: #bbb; }
-
-    .seg-select {
+    .seg-select{
       padding: 0 36px 0 14px; cursor: pointer;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 12px center;
     }
 
-    .field-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
-    .field-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .field-row-2col .seg-full, .field-row-2col .seg-select { width: 100%; }
-
-    /* segment sizes */
-    .seg-dob-d { width: 64px; }
-    .seg-dob-m { width: 72px; text-transform: uppercase; }
-    .seg-dob-y { width: 84px; }
-
-    .seg-addr-num  { width: 88px; }
-    .seg-addr-st   { flex: 1; text-align: left; padding: 10px 12px; font-size: 16px; }
-    .seg-addr-unit { width: 104px; text-align: left; padding: 10px 10px; font-size: 15px; }
-
-    .seg-sin { width: 84px; }
-
-    .seg-pc-a1, .seg-pc-a2, .seg-pc-a3 { width: 46px; text-transform: uppercase; }
-    .seg-pc-n1, .seg-pc-n2, .seg-pc-n3 { width: 46px; }
-
-    .seg-ramq-a { width: 96px; text-transform: uppercase; }
-    .seg-ramq-n { width: 148px; }
-
+    /* ── Layout helpers ── */
+    .field-row       { display: flex; align-items: center; gap: 6px; }
+    .field-row-2col  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field-row-2col .seg-full,
+    .field-row-2col .seg-select { width: 100%; }
     .sep       { font-size: 20px; color: #ccc; font-weight: 300; user-select: none; flex-shrink: 0; }
     .sep-space { width: 10px; flex-shrink: 0; }
 
     /* ── Chips ── */
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; margin-top: 6px; }
-    .chip {
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; min-height: 0; }
+    .chip  {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 5px 11px; border-radius: 99px;
       border: 1.5px solid #e8e8e8; background: #f7f7f5;
@@ -108,8 +75,9 @@
     }
     .chip-x:hover { color: #e05252; background: #fce8e8; }
 
+    /* ── Misc ── */
     .divider { border: none; border-top: 1px solid #f0f0f0; margin: 0.25rem 0 1.5rem; }
-
+    .opt-hint{ font-size: 13px; color: #bbb; padding-left: 4px; }
     .btn {
       width: 100%; padding: 14px; border: none; border-radius: 10px;
       background: #1a1a1a; color: #fff; font-size: 15px; font-weight: 600;
@@ -119,7 +87,6 @@
     }
     .btn:hover  { background: #333; }
     .btn:active { transform: scale(0.98); }
-
     .msg {
       margin-top: 12px; font-size: 13px; min-height: 20px;
       text-align: center; border-radius: 8px; padding: 0; transition: all 0.2s;
@@ -130,471 +97,671 @@
 
     /* ── Dark mode ── */
     @media (prefers-color-scheme: dark) {
-      body         { background: #1a1a1a; }
-      .card        { background: #242424; box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2); }
-      h1           { color: #f0f0f0; }
-      .subtitle    { color: #666; }
-      .field-label { color: #999; }
+      body          { background: #1a1a1a; }
+      .card         { background: #242424; box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2); }
+      h1            { color: #f0f0f0; }
+      .subtitle     { color: #666; }
+      .field-label  { color: #999; }
       .seg, .seg-full, .seg-select { background: #1e1e1e; border-color: #383838; color: #f0f0f0; }
       .seg:focus, .seg-full:focus, .seg-select:focus { background: #1e1e1e; border-color: #4a90d9; }
       .seg::placeholder, .seg-full::placeholder { color: #555; }
-      .seg-select  {
+      .seg-select   {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       }
-      .sep         { color: #444; }
-      .chip        { background: #2a2a2a; border-color: #383838; color: #d0d0d0; }
+      .sep          { color: #444; }
+      .chip         { background: #2a2a2a; border-color: #383838; color: #d0d0d0; }
       .chip:hover, .chip:active { background: #1a2d45; border-color: #4a90d9; color: #7ab8f5; }
-      .chip-x      { color: #555; }
-      .btn         { background: #f0f0f0; color: #1a1a1a; }
-      .btn:hover   { background: #fff; }
-      .msg.err     { background: #2d1515; color: #f08080; }
-      .msg.ok      { background: #0f2318; color: #6fcf97; }
-      .divider     { border-color: #2e2e2e; }
+      .chip-x       { color: #555; }
+      .btn          { background: #f0f0f0; color: #1a1a1a; }
+      .btn:hover    { background: #fff; }
+      .msg.err      { background: #2d1515; color: #f08080; }
+      .msg.ok       { background: #0f2318; color: #6fcf97; }
+      .divider      { border-color: #2e2e2e; }
+      .opt-hint     { color: #555; }
     }
   </style>
 </head>
 <body>
 <div class="card">
-  <h1>Patient registration</h1>
-  <p class="subtitle">Please fill in all fields</p>
-
-  <!-- NAME -->
-  <div class="field-group">
-    <p class="field-label">Full name</p>
-    <input class="seg-full" id="name" type="text" inputmode="text"
-           autocapitalize="words" autocorrect="off" spellcheck="false"
-           placeholder="First and last name" aria-label="Full name">
-    <div class="chips" id="chips-name"></div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- DATE OF BIRTH -->
-  <div class="field-group">
-    <p class="field-label">Date of Birth</p>
-    <div class="field-row">
-      <input class="seg seg-dob-d" id="dob-d" type="text" inputmode="numeric"
-             maxlength="2" placeholder="DD" autocomplete="off" autocorrect="off"
-             spellcheck="false" aria-label="Day">
-      <span class="sep">-</span>
-      <input class="seg seg-dob-m" id="dob-m" type="text" inputmode="text"
-             maxlength="3" placeholder="MMM" autocomplete="off" autocorrect="off"
-             autocapitalize="characters" spellcheck="false" aria-label="Month (e.g. JAN)">
-      <span class="sep">-</span>
-      <input class="seg seg-dob-y" id="dob-y" type="text" inputmode="numeric"
-             maxlength="4" placeholder="YYYY" autocomplete="off" autocorrect="off"
-             spellcheck="false" aria-label="Year">
-    </div>
-    <div class="chips" id="chips-dob"></div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- ADDRESS -->
-  <div class="field-group">
-    <p class="field-label">Address</p>
-    <div class="field-row" style="margin-bottom:8px;">
-      <input class="seg seg-addr-num" id="addr-num" type="text" inputmode="numeric"
-             maxlength="6" placeholder="No." autocomplete="off" autocorrect="off"
-             spellcheck="false" aria-label="Street number">
-      <input class="seg seg-addr-st" id="addr-st" type="text" inputmode="text"
-             autocapitalize="words" autocorrect="off" spellcheck="false"
-             placeholder="Street name" aria-label="Street name">
-    </div>
-    <div class="field-row">
-      <input class="seg seg-addr-unit" id="addr-unit" type="text" inputmode="text"
-             autocapitalize="characters" autocorrect="off" spellcheck="false"
-             maxlength="8" placeholder="Apt / Unit" aria-label="Apartment or unit (optional)">
-      <span style="font-size:13px;color:#bbb;padding-left:4px;">optional</span>
-    </div>
-    <div class="chips" id="chips-address"></div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- CITY + PROVINCE -->
-  <div class="field-group">
-    <p class="field-label">City &amp; province</p>
-    <div class="field-row-2col">
-      <input class="seg-full" id="city" type="text" inputmode="text"
-             autocapitalize="words" autocorrect="off" spellcheck="false"
-             placeholder="City" aria-label="City">
-      <select class="seg-select" id="province" aria-label="Province or territory">
-        <option value="">Province</option>
-        <option value="AB">AB – Alberta</option>
-        <option value="BC">BC – British Columbia</option>
-        <option value="MB">MB – Manitoba</option>
-        <option value="NB">NB – New Brunswick</option>
-        <option value="NL">NL – Newfoundland &amp; Labrador</option>
-        <option value="NS">NS – Nova Scotia</option>
-        <option value="NT">NT – Northwest Territories</option>
-        <option value="NU">NU – Nunavut</option>
-        <option value="ON">ON – Ontario</option>
-        <option value="PE">PE – Prince Edward Island</option>
-        <option value="QC">QC – Québec</option>
-        <option value="SK">SK – Saskatchewan</option>
-        <option value="YT">YT – Yukon</option>
-      </select>
-    </div>
-    <div class="chips" id="chips-city"></div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- SIN: NNN NNN NNN -->
-  <div class="field-group">
-    <p class="field-label">Social Insurance Number (SIN)</p>
-    <div class="field-row">
-      <input class="seg seg-sin" id="sin1" type="text" inputmode="numeric" maxlength="3"
-             placeholder="NNN" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="SIN part 1">
-      <span class="sep-space"></span>
-      <input class="seg seg-sin" id="sin2" type="text" inputmode="numeric" maxlength="3"
-             placeholder="NNN" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="SIN part 2">
-      <span class="sep-space"></span>
-      <input class="seg seg-sin" id="sin3" type="text" inputmode="numeric" maxlength="3"
-             placeholder="NNN" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="SIN part 3">
-    </div>
-    <div class="chips" id="chips-sin"></div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- POSTAL CODE: A N A  N A N -->
-  <div class="field-group">
-    <p class="field-label">Postal code</p>
-    <div class="field-row">
-      <input class="seg seg-pc-a1" id="pc1" type="text" inputmode="text"    maxlength="1" placeholder="A" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Postal 1">
-      <input class="seg seg-pc-n1" id="pc2" type="text" inputmode="numeric" maxlength="1" placeholder="N" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Postal 2">
-      <input class="seg seg-pc-a2" id="pc3" type="text" inputmode="text"    maxlength="1" placeholder="A" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Postal 3">
-      <span class="sep-space"></span>
-      <input class="seg seg-pc-n2" id="pc4" type="text" inputmode="numeric" maxlength="1" placeholder="N" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Postal 4">
-      <input class="seg seg-pc-a3" id="pc5" type="text" inputmode="text"    maxlength="1" placeholder="A" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Postal 5">
-      <input class="seg seg-pc-n3" id="pc6" type="text" inputmode="numeric" maxlength="1" placeholder="N" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Postal 6">
-    </div>
-    <div class="chips" id="chips-pc"></div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- RAMQ: AAAA NNNNNNNN -->
-  <div class="field-group">
-    <p class="field-label">RAMQ number</p>
-    <div class="field-row">
-      <input class="seg seg-ramq-a" id="ramq-a" type="text" inputmode="text" maxlength="4"
-             placeholder="AAAA" autocomplete="off" autocorrect="off"
-             autocapitalize="characters" spellcheck="false" aria-label="RAMQ letters">
-      <span class="sep-space"></span>
-      <input class="seg seg-ramq-n" id="ramq-n" type="text" inputmode="numeric" maxlength="8"
-             placeholder="NNNNNNNN" autocomplete="off" autocorrect="off"
-             spellcheck="false" aria-label="RAMQ digits">
-    </div>
-    <div class="chips" id="chips-ramq"></div>
-  </div>
-
+  <h1 id="form-title"></h1>
+  <p class="subtitle" id="form-subtitle"></p>
+  <div id="form-fields"></div>
   <button class="btn" id="submit-btn">Submit</button>
   <p class="msg" id="msg"></p>
 </div>
 
 <script>
-  /* ── Month data with max days ── */
-  const MONTH_DATA = {
-    JAN:{days:31}, FEB:{days:28}, MAR:{days:31}, APR:{days:30},
-    MAY:{days:31}, JUN:{days:30}, JUL:{days:31}, AUG:{days:31},
-    SEP:{days:30}, OCT:{days:31}, NOV:{days:30}, DEC:{days:31}
-  };
+/* ============================================================
+   SECTION 1 — FORM DEFINITION
+   Edit this section to change the form.
+   Do not edit anything below the "ENGINE" marker.
+   ============================================================ */
 
-  function isLeapYear(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+const FORM_TITLE    = 'Patient registration Apr 3';
+const FORM_SUBTITLE = 'Please fill in all fields then hit SUBMIT';
 
-  function maxDaysInMonth(mon, yr) {
-    if (!MONTH_DATA[mon]) return 31;
-    if (mon === 'FEB' && isLeapYear(yr)) return 29;
-    return MONTH_DATA[mon].days;
-  }
+/*
+  FIELD TYPES:
+  ─────────────────────────────────────────────────────────────
+  alpha-full   Single box, letters + spaces + hyphens + apostrophes only.
+               Keyboard: text.
 
-  const MAX_CHIPS = 6;
+  free-full    Single box, any characters allowed.
+               Keyboard: text.
 
-  /* ── Storage ── */
-  function loadHistory(key) {
-    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; }
-  }
-  function saveHistory(key, h) {
-    try { localStorage.setItem(key, JSON.stringify(h)); } catch(e) {}
-  }
-  function addToHistory(key, val) {
-    let h = loadHistory(key).filter(x => x !== val);
-    h.unshift(val);
-    if (h.length > MAX_CHIPS) h = h.slice(0, MAX_CHIPS);
-    saveHistory(key, h);
-  }
-  function removeFromHistory(key, val) {
-    saveHistory(key, loadHistory(key).filter(x => x !== val));
-  }
+  split        Segmented input driven by a pattern string.
+               Separators in the pattern:
+                 -        rendered as a visible "-" separator
+                 (space)  rendered as a small gap (no visible character)
+               Segment character codes:
+                 N  numeric digit
+                 A  alpha letter (uppercased)
+                 M  exactly 3 alpha letters, validated as a month name (JAN–DEC)
+               Width of each segment is calculated automatically from its length.
+               Segments auto-advance focus when full, and backspace retreats.
 
-  /* ── Chips ── */
-  function renderChips(containerId, storeKey, populateFn) {
-    const el = document.getElementById(containerId);
-    const h  = loadHistory(storeKey);
-    el.innerHTML = '';
-    if (!h.length) return;
-    h.forEach(val => {
-      const chip  = document.createElement('span');
-      chip.className = 'chip';
-      const label = document.createElement('span');
-      label.textContent = val;
-      label.addEventListener('click', () => populateFn(val));
-      const x = document.createElement('span');
-      x.className = 'chip-x';
-      x.textContent = '✕';
-      x.title = 'Remove';
-      x.addEventListener('click', e => {
-        e.stopPropagation();
-        removeFromHistory(storeKey, val);
-        renderChips(containerId, storeKey, populateFn);
-      });
-      chip.appendChild(label);
-      chip.appendChild(x);
-      el.appendChild(chip);
+  address      Special two-row layout:
+               Row 1 — street number (numeric) + street name (free text, allows digits)
+               Row 2 — optional unit / apartment
+               Stored in history as "NUM|STREET|UNIT".
+
+  city-province  Side-by-side city text box + province dropdown.
+               Stored in history as "CITY|PROVINCE_CODE".
+
+  dropdown     Full-width select element.
+               Provide an optionSet name (key into OPTION_SETS below).
+
+  ─────────────────────────────────────────────────────────────
+  FIELD PROPERTIES:
+    id          Unique identifier. Used as the localStorage key prefix.
+    label       Human-readable label shown above the field.
+    type        One of the types listed above.
+    pattern     (split only) Pattern string, e.g. "NN-MMM-NNNN" or "ANA NAN".
+    optionSet   (dropdown only) Key into OPTION_SETS.
+    optional    (address unit row) If true, unit is not validated.
+    required    Default true. Set false to skip validation.
+*/
+
+const FORM_FIELDS = [
+  {
+    id:    'name',
+    label: 'Full name',
+    type:  'alpha-full'
+  },
+  {
+    id:      'dob',
+    label:   'Date of birth',
+    type:    'split',
+    pattern: 'NN-MMM-NNNN'
+  },
+  {
+    id:    'address',
+    label: 'Address',
+    type:  'address'
+  },
+  {
+    id:    'city',
+    label: 'City & province',
+    type:  'city-province'
+  },
+  {
+    id:      'sin',
+    label:   'Social Insurance Number (SIN)',
+    type:    'split',
+    pattern: 'NNN NNN NNN'
+  },
+  {
+    id:      'postal',
+    label:   'Postal code',
+    type:    'split',
+    pattern: 'ANA NAN'
+  },
+  {
+    id:      'ramq',
+    label:   'RAMQ number',
+    type:    'split',
+    pattern: 'AAAA NNNNNNNN'
+  }
+];
+
+/*
+  OPTION SETS — named lists of dropdown options.
+  Each entry: { value, label }
+  Referenced by dropdown fields via optionSet property.
+*/
+const OPTION_SETS = {
+  provinces: [
+    { value: 'AB', label: 'AB – Alberta' },
+    { value: 'BC', label: 'BC – British Columbia' },
+    { value: 'MB', label: 'MB – Manitoba' },
+    { value: 'NB', label: 'NB – New Brunswick' },
+    { value: 'NL', label: 'NL – Newfoundland & Labrador' },
+    { value: 'NS', label: 'NS – Nova Scotia' },
+    { value: 'NT', label: 'NT – Northwest Territories' },
+    { value: 'NU', label: 'NU – Nunavut' },
+    { value: 'ON', label: 'ON – Ontario' },
+    { value: 'PE', label: 'PE – Prince Edward Island' },
+    { value: 'QC', label: 'QC – Québec' },
+    { value: 'SK', label: 'SK – Saskatchewan' },
+    { value: 'YT', label: 'YT – Yukon' }
+  ]
+};
+
+/* ============================================================
+   ENGINE — do not edit below this line
+   ============================================================ */
+
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const MONTH_DAYS = { JAN:31,FEB:28,MAR:31,APR:30,MAY:31,JUN:30,JUL:31,AUG:31,SEP:30,OCT:31,NOV:30,DEC:31 };
+const MAX_CHIPS  = 6;
+
+function isLeapYear(y) { return (y%4===0 && y%100!==0) || y%400===0; }
+function maxDaysInMonth(mon, yr) {
+  if (!MONTH_DAYS[mon]) return 31;
+  return (mon==='FEB' && isLeapYear(yr)) ? 29 : MONTH_DAYS[mon];
+}
+
+/* ── Storage ── */
+function loadHistory(key)      { try { return JSON.parse(localStorage.getItem(key)||'[]'); } catch(e) { return []; } }
+function saveHistory(key, h)   { try { localStorage.setItem(key, JSON.stringify(h)); } catch(e) {} }
+function addToHistory(key, val){
+  let h = loadHistory(key).filter(x=>x!==val);
+  h.unshift(val);
+  if (h.length>MAX_CHIPS) h=h.slice(0,MAX_CHIPS);
+  saveHistory(key, h);
+}
+function removeFromHistory(key, val){ saveHistory(key, loadHistory(key).filter(x=>x!==val)); }
+
+/* ── Chip rendering ── */
+function renderChips(containerId, storeKey, populateFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const h = loadHistory(storeKey);
+  el.innerHTML = '';
+  if (!h.length) return;
+  h.forEach(val => {
+    const chip  = document.createElement('span'); chip.className = 'chip';
+    const label = document.createElement('span'); label.textContent = val;
+    label.addEventListener('click', () => populateFn(val));
+    const x = document.createElement('span'); x.className = 'chip-x'; x.textContent = '✕'; x.title = 'Remove';
+    x.addEventListener('click', e => {
+      e.stopPropagation();
+      removeFromHistory(storeKey, val);
+      renderChips(containerId, storeKey, populateFn);
     });
+    chip.appendChild(label); chip.appendChild(x); el.appendChild(chip);
+  });
+}
+
+/* ── Parse a pattern string into segment descriptors ──
+   Returns array of: { kind: 'seg'|'sep', chars, isAlpha, isMonth, isFree, placeholder, width }
+   or               { kind: 'sep', char }
+*/
+function parsePattern(pattern) {
+  const tokens = [];
+  let i = 0;
+  while (i < pattern.length) {
+    const ch = pattern[i];
+    if (ch === '-') {
+      tokens.push({ kind: 'sep', char: '-' });
+      i++;
+    } else if (ch === ' ') {
+      tokens.push({ kind: 'sep', char: ' ' });
+      i++;
+    } else {
+      /* Collect a run of the same character type */
+      const type = ch;
+      let run = '';
+      while (i < pattern.length && pattern[i] === type) { run += pattern[i]; i++; }
+      /* Special case: MMM = month abbreviation */
+      const isMonth  = (type === 'M' && run.length === 3);
+      const isAlpha  = (type === 'A') || isMonth;
+      const isNum    = (type === 'N');
+      const isFree   = (!isAlpha && !isNum);  /* anything else: free */
+      const placeholder = isMonth ? 'MMM' : run.split('').map(c => c === 'N' ? 'N' : c === 'A' ? 'A' : c).join('');
+      /* Width: base 38px per char, minimum 46px, +8px padding */
+      const width = Math.max(46, run.length * 22 + 16);
+      tokens.push({ kind: 'seg', chars: run.length, isAlpha, isNum, isMonth, isFree, placeholder, width });
+    }
   }
+  return tokens;
+}
 
-  /* ── Field references ── */
-  const name_    = document.getElementById('name');
-  const dobD     = document.getElementById('dob-d');
-  const dobM     = document.getElementById('dob-m');
-  const dobY     = document.getElementById('dob-y');
-  const addrNum  = document.getElementById('addr-num');
-  const addrSt   = document.getElementById('addr-st');
-  const addrUnit = document.getElementById('addr-unit');
-  const city     = document.getElementById('city');
-  const province = document.getElementById('province');
-  const sin      = [1,2,3].map(i => document.getElementById('sin'+i));
-  const pc       = [1,2,3,4,5,6].map(i => document.getElementById('pc'+i));
-  const ramqA    = document.getElementById('ramq-a');
-  const ramqN    = document.getElementById('ramq-n');
-  const msg      = document.getElementById('msg');
+/* ── DOM helpers ── */
+function makeInput(cls, attrs = {}) {
+  const el = document.createElement('input');
+  el.className = cls;
+  Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'style') el.style.cssText = v;
+    else el.setAttribute(k, v);
+  });
+  return el;
+}
+function makeSelect(cls, options, placeholder) {
+  const el = document.createElement('select');
+  el.className = cls;
+  const def = document.createElement('option');
+  def.value = ''; def.textContent = placeholder;
+  el.appendChild(def);
+  options.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o.value; opt.textContent = o.label;
+    el.appendChild(opt);
+  });
+  return el;
+}
 
-  /* ── Populate helpers ── */
-  function populateName(val) { name_.value = val; clearErr(name_); }
+/* ── Field registry: maps id -> { elements[], getValue(), setValue(), clearErrors(), validate() } ── */
+const FIELD_REGISTRY = {};
+/* Focus chain — ordered flat list of focusable elements */
+const FOCUS_CHAIN = [];
 
-  function populateDob(val) {
-    const p = val.split('-');
-    dobD.value = p[0]; dobM.value = p[1]; dobY.value = p[2];
-    [dobD, dobM, dobY].forEach(clearErr);
-  }
+function registerField(id, obj) { FIELD_REGISTRY[id] = obj; }
 
-  function populateAddress(val) {
-    /* stored as "NUM|STREET|UNIT" */
-    const p = val.split('|');
-    addrNum.value  = p[0] || '';
-    addrSt.value   = p[1] || '';
-    addrUnit.value = p[2] || '';
-    [addrNum, addrSt, addrUnit].forEach(clearErr);
-  }
+/* ── Builder: split field ── */
+function buildSplitField(fieldDef, container) {
+  const tokens  = parsePattern(fieldDef.pattern);
+  const segs    = tokens.filter(t => t.kind === 'seg');
+  const row     = document.createElement('div'); row.className = 'field-row';
+  const inputs  = [];
 
-  function populateCity(val) {
-    /* stored as "CITY|PROV" */
-    const p = val.split('|');
-    city.value     = p[0] || '';
-    province.value = p[1] || '';
-    [city, province].forEach(clearErr);
-  }
+  tokens.forEach((tok, ti) => {
+    if (tok.kind === 'sep') {
+      if (tok.char === '-') {
+        const s = document.createElement('span'); s.className = 'sep'; s.textContent = '-';
+        row.appendChild(s);
+      } else {
+        const s = document.createElement('span'); s.className = 'sep-space';
+        row.appendChild(s);
+      }
+      return;
+    }
+    /* seg */
+    const inp = makeInput('seg', {
+      type: 'text',
+      inputmode: tok.isNum ? 'numeric' : 'text',
+      maxlength: tok.chars,
+      placeholder: tok.placeholder,
+      autocomplete: 'off', autocorrect: 'off', spellcheck: 'false',
+      style: `width:${tok.width}px;${tok.isAlpha || tok.isMonth ? 'text-transform:uppercase;' : ''}`
+    });
+    if (tok.isAlpha || tok.isMonth) inp.setAttribute('autocapitalize', 'characters');
+    inputs.push({ el: inp, tok });
+    row.appendChild(inp);
+  });
 
-  function populateSIN(val) {
-    const clean = val.replace(/\s/g, '');
-    sin.forEach((el, i) => { el.value = clean.slice(i*3, i*3+3); clearErr(el); });
-  }
+  container.appendChild(row);
 
-  function populatePC(val) {
-    const clean = val.replace(/\s/g, '');
-    pc.forEach((el, i) => { el.value = clean[i] || ''; clearErr(el); });
-  }
+  /* Wire inputs */
+  inputs.forEach(({ el, tok }, idx) => {
+    const next = inputs[idx+1] ? inputs[idx+1].el : null;
+    const prev = inputs[idx-1] ? inputs[idx-1].el : null;
 
-  function populateRAMQ(val) {
-    const p = val.split(' ');
-    ramqA.value = p[0] || ''; ramqN.value = p[1] || '';
-    [ramqA, ramqN].forEach(clearErr);
-  }
-
-  /* ── Auto-advance helper ── */
-  function autoSeg(el, allowAlpha, allowNum, next, prev) {
     el.addEventListener('input', () => {
       let v = el.value;
-      if (allowAlpha && !allowNum) v = v.replace(/[^a-zA-Z]/g, '').toUpperCase();
-      if (allowNum && !allowAlpha) v = v.replace(/\D/g, '');
+      if ((tok.isAlpha || tok.isMonth) && !tok.isNum) v = v.replace(/[^a-zA-Z]/g,'').toUpperCase();
+      if (tok.isNum && !tok.isAlpha) v = v.replace(/\D/g,'');
       el.value = v;
       clearErr(el);
-      if (v.length === el.maxLength && next) next.focus();
+      if (v.length === tok.chars && next) next.focus();
     });
     el.addEventListener('keydown', e => {
-      if (e.key === 'Backspace' && el.value === '' && prev) prev.focus();
+      if (e.key === 'Backspace' && el.value === '' && prev) { e.preventDefault(); prev.focus(); }
+    });
+
+    /* Month blur validation */
+    if (tok.isMonth) {
+      el.addEventListener('blur', () => {
+        const v = el.value.toUpperCase();
+        if (v.length === 3 && !MONTHS.includes(v)) {
+          el.classList.add('error');
+          showMsg('Invalid month — use JAN, FEB … DEC', 'err');
+        }
+      });
+      el.addEventListener('focus', () => { clearErr(el); clearMsg(); });
+    }
+
+    FOCUS_CHAIN.push(el);
+  });
+
+  /* Populate from stored string: rejoin removing separators then slice by segment lengths */
+  function setValue(val) {
+    /* strip all sep chars, then redistribute */
+    const clean = val.replace(/[\s\-]/g,'');
+    let pos = 0;
+    inputs.forEach(({ el, tok }) => {
+      el.value = clean.slice(pos, pos + tok.chars);
+      clearErr(el);
+      pos += tok.chars;
     });
   }
 
-  /* ── DOB ── */
-  autoSeg(dobD, false, true, dobM, null);
-  autoSeg(dobM, true, false, dobY, dobD);
-  autoSeg(dobY, false, true, addrNum, dobM);
-  dobY.addEventListener('keydown', e => { if (e.key === 'Enter') submitForm(); });
+  function getValue() {
+    /* Rebuild value with separators matching pattern */
+    let out = '';
+    tokens.forEach(tok => {
+      if (tok.kind === 'sep') { out += tok.char; return; }
+      const inp = inputs[tokens.slice(0, tokens.indexOf(tok)).filter(t=>t.kind==='seg').length];
+      /* find matching input by seg index */
+    });
+    /* simpler: just join segments with their separators from pattern */
+    let si = 0;
+    tokens.forEach(tok => {
+      if (tok.kind === 'sep') { out += tok.char; }
+      else { out += (inputs[si]?.el.value || ''); si++; }
+    });
+    return out;
+  }
 
-  /* Live month validation on blur */
-  dobM.addEventListener('blur', () => {
-    const v = dobM.value.toUpperCase();
-    if (v.length === 3 && !MONTH_DATA[v]) {
-      dobM.classList.add('error');
-      showMsg('Invalid month — use JAN, FEB … DEC', 'err');
-    }
-  });
-  dobM.addEventListener('focus', () => { clearErr(dobM); clearMsg(); });
+  function clearErrors() { inputs.forEach(({el}) => clearErr(el)); }
 
-  /* ── Address ── */
-  addrNum.addEventListener('input', () => {
-    addrNum.value = addrNum.value.replace(/\D/g, '');
-    clearErr(addrNum);
-  });
-  addrNum.addEventListener('keydown', e => {
-    if ((e.key === 'Tab' || e.key === 'Enter') && addrNum.value) { e.preventDefault(); addrSt.focus(); }
-    if (e.key === 'Backspace' && addrNum.value === '') dobY.focus();
-  });
-  addrSt.addEventListener('input',   () => { clearErr(addrSt); });
-  addrSt.addEventListener('keydown', e => { if (e.key === 'Backspace' && addrSt.value === '') addrNum.focus(); });
-  addrUnit.addEventListener('input',   () => { clearErr(addrUnit); });
-  addrUnit.addEventListener('keydown', e => { if (e.key === 'Backspace' && addrUnit.value === '') addrSt.focus(); });
-
-  /* ── City / Province ── */
-  city.addEventListener('input',    () => { clearErr(city); });
-  city.addEventListener('keydown',  e => { if (e.key === 'Backspace' && city.value === '') addrUnit.focus(); });
-  province.addEventListener('change', () => { clearErr(province); });
-
-  /* ── SIN ── */
-  sin.forEach((el, i) => {
-    autoSeg(el, false, true, sin[i+1] || pc[0], sin[i-1] || city);
-  });
-
-  /* ── Postal code ── */
-  const pcTypes = ['alpha','num','alpha','num','alpha','num'];
-  pc.forEach((el, i) => {
-    const isAlpha = pcTypes[i] === 'alpha';
-    autoSeg(el, isAlpha, !isAlpha, pc[i+1] || ramqA, pc[i-1] || sin[2]);
-  });
-
-  /* ── RAMQ ── */
-  autoSeg(ramqA, true, false, ramqN, pc[5]);
-  autoSeg(ramqN, false, true, null, ramqA);
-  ramqN.addEventListener('keydown', e => { if (e.key === 'Enter') submitForm(); });
-
-  /* ── Name ── */
-  name_.addEventListener('input', () => {
-    name_.value = name_.value.replace(/[^a-zA-Z\s'\-]/g, '');
-    clearErr(name_);
-  });
-
-  /* ── Validation ── */
   function validate() {
-    /* Name */
-    const n = name_.value.trim();
-    if (!n)                           return { field: name_, msg: 'Name is required' };
-    if (!/^[a-zA-Z\s'\-]+$/.test(n)) return { field: name_, msg: 'Name must contain letters only' };
+    for (let i = 0; i < inputs.length; i++) {
+      const { el, tok } = inputs[i];
+      const v = el.value.toUpperCase();
 
-    /* DOB */
-    const d  = dobD.value.trim();
-    const m  = dobM.value.trim().toUpperCase();
-    const y  = dobY.value.trim();
-    if (!/^\d{1,2}$/.test(d))        return { field: dobD, msg: 'Enter a valid day (DD)' };
-    if (!/^[A-Z]{3}$/.test(m))       return { field: dobM, msg: 'Month must be 3 letters (e.g. JAN)' };
-    if (!MONTH_DATA[m])               return { field: dobM, msg: 'Invalid month — use JAN, FEB … DEC' };
-    if (!/^\d{4}$/.test(y))          return { field: dobY, msg: 'Enter a 4-digit year' };
-    const yr  = parseInt(y);
-    const day = parseInt(d);
-    if (yr < 1900 || yr > new Date().getFullYear()) return { field: dobY, msg: 'Check the year' };
-    const maxDay = maxDaysInMonth(m, yr);
-    if (day < 1 || day > maxDay)     return { field: dobD, msg: `${m} ${yr} only has ${maxDay} days` };
-
-    /* Address */
-    if (!addrNum.value.trim())        return { field: addrNum, msg: 'Street number is required' };
-    if (!addrSt.value.trim())         return { field: addrSt,  msg: 'Street name is required' };
-
-    /* City + Province */
-    if (!city.value.trim())           return { field: city,     msg: 'City is required' };
-    if (!province.value)              return { field: province,  msg: 'Please select a province' };
-
-    /* SIN */
-    for (let i = 0; i < 3; i++) {
-      if (!/^\d{3}$/.test(sin[i].value.trim())) return { field: sin[i], msg: 'SIN: each group must be 3 digits' };
+      if (tok.isMonth) {
+        if (!/^[A-Z]{3}$/.test(v))    return { el, msg: `${fieldDef.label}: month must be 3 letters (e.g. JAN)` };
+        if (!MONTHS.includes(v))       return { el, msg: `${fieldDef.label}: invalid month — use JAN, FEB … DEC` };
+      } else if (tok.isAlpha) {
+        if (v.length !== tok.chars || !/^[A-Z]+$/.test(v))
+          return { el, msg: `${fieldDef.label}: ${tok.chars} letter${tok.chars>1?'s':''} required here` };
+      } else if (tok.isNum) {
+        if (v.length !== tok.chars || !/^\d+$/.test(v))
+          return { el, msg: `${fieldDef.label}: ${tok.chars} digit${tok.chars>1?'s':''} required here` };
+      }
     }
 
-    /* Postal code */
-    const pcVal = pc.map(el => el.value.trim().toUpperCase());
-    for (let i = 0; i < 6; i++) {
-      if (!pcVal[i])                              return { field: pc[i], msg: 'Complete the postal code' };
-      if (pcTypes[i]==='alpha' && !/^[A-Z]$/.test(pcVal[i])) return { field: pc[i], msg: 'Postal code: letter expected here' };
-      if (pcTypes[i]==='num'   && !/^\d$/.test(pcVal[i]))     return { field: pc[i], msg: 'Postal code: digit expected here' };
+    /* DOB cross-check: if pattern contains MMM and NN and NNNN, validate day vs month */
+    const monthInput = inputs.find(({tok}) => tok.isMonth);
+    const numSegs    = inputs.filter(({tok}) => tok.isNum);
+    if (monthInput && numSegs.length >= 2) {
+      const mon  = monthInput.el.value.toUpperCase();
+      const day  = parseInt(numSegs[0].el.value);
+      const yr   = parseInt(numSegs[numSegs.length-1].el.value);
+      if (MONTHS.includes(mon) && !isNaN(day) && !isNaN(yr) && yr > 1000) {
+        const max = maxDaysInMonth(mon, yr);
+        if (day < 1 || day > max)
+          return { el: numSegs[0].el, msg: `${mon} ${yr} only has ${max} days` };
+      }
     }
-
-    /* RAMQ */
-    if (!/^[A-Z]{4}$/.test(ramqA.value.trim().toUpperCase())) return { field: ramqA, msg: 'RAMQ: 4 letters required' };
-    if (!/^\d{8}$/.test(ramqN.value.trim()))                   return { field: ramqN, msg: 'RAMQ: 8 digits required' };
-
     return null;
   }
 
-  /* ── Submit ── */
-  function submitForm() {
-    clearMsg();
-    [name_, dobD, dobM, dobY, addrNum, addrSt, addrUnit, city, province, ...sin, ...pc, ramqA, ramqN].forEach(clearErr);
+  registerField(fieldDef.id, {
+    elements: inputs.map(({el}) => el),
+    getValue,
+    setValue,
+    clearErrors,
+    validate,
+    storeKey: 'reg_' + fieldDef.id,
+    populateFn: setValue
+  });
+}
 
-    const err = validate();
-    if (err) {
-      err.field.classList.add('error');
-      if (err.field.focus) err.field.focus();
-      showMsg(err.msg, 'err');
-      return;
+/* ── Builder: alpha-full / free-full ── */
+function buildFullField(fieldDef, container, alphaOnly) {
+  const inp = makeInput('seg-full', {
+    type: 'text', inputmode: 'text',
+    autocapitalize: 'words', autocorrect: 'off', spellcheck: 'false',
+    placeholder: fieldDef.placeholder || fieldDef.label,
+    'aria-label': fieldDef.label
+  });
+  container.appendChild(inp);
+  FOCUS_CHAIN.push(inp);
+
+  inp.addEventListener('input', () => {
+    if (alphaOnly) inp.value = inp.value.replace(/[^a-zA-Z\s'\-]/g,'');
+    clearErr(inp);
+  });
+
+  registerField(fieldDef.id, {
+    elements: [inp],
+    getValue:    () => inp.value.trim(),
+    setValue:    v  => { inp.value = v; clearErr(inp); },
+    clearErrors: () => clearErr(inp),
+    validate: () => {
+      const v = inp.value.trim();
+      if (!v)                           return { el: inp, msg: `${fieldDef.label} is required` };
+      if (alphaOnly && !/^[a-zA-Z\s'\-]+$/.test(v))
+                                        return { el: inp, msg: `${fieldDef.label} must contain letters only` };
+      return null;
+    },
+    storeKey: 'reg_' + fieldDef.id,
+    populateFn: v => { inp.value = v; clearErr(inp); }
+  });
+}
+
+/* ── Builder: address ── */
+function buildAddressField(fieldDef, container) {
+  const row1 = document.createElement('div');
+  row1.className = 'field-row'; row1.style.marginBottom = '8px';
+
+  const numInp = makeInput('seg', {
+    type:'text', inputmode:'numeric', maxlength:'6',
+    placeholder:'No.', autocomplete:'off', autocorrect:'off', spellcheck:'false',
+    style:'width:88px;', 'aria-label':'Street number'
+  });
+  const stInp = makeInput('seg', {
+    type:'text', inputmode:'text',
+    autocapitalize:'words', autocorrect:'off', spellcheck:'false',
+    placeholder:'Street name', 'aria-label':'Street name',
+    style:'flex:1;text-align:left;padding:10px 12px;font-size:16px;'
+  });
+  row1.appendChild(numInp); row1.appendChild(stInp);
+
+  const row2 = document.createElement('div'); row2.className = 'field-row';
+  const unitInp = makeInput('seg', {
+    type:'text', inputmode:'text', maxlength:'8',
+    autocapitalize:'characters', autocorrect:'off', spellcheck:'false',
+    placeholder:'Apt / Unit', 'aria-label':'Unit (optional)',
+    style:'width:110px;text-align:left;padding:10px 10px;font-size:15px;'
+  });
+  const hint = document.createElement('span'); hint.className='opt-hint'; hint.textContent='optional';
+  row2.appendChild(unitInp); row2.appendChild(hint);
+
+  container.appendChild(row1); container.appendChild(row2);
+  FOCUS_CHAIN.push(numInp, stInp, unitInp);
+
+  numInp.addEventListener('input', () => { numInp.value = numInp.value.replace(/\D/g,''); clearErr(numInp); });
+  numInp.addEventListener('keydown', e => {
+    if ((e.key==='Tab'||e.key==='Enter') && numInp.value) { e.preventDefault(); stInp.focus(); }
+  });
+  stInp.addEventListener('input',   () => clearErr(stInp));
+  stInp.addEventListener('keydown', e => { if (e.key==='Backspace' && stInp.value==='') numInp.focus(); });
+  unitInp.addEventListener('input',   () => clearErr(unitInp));
+  unitInp.addEventListener('keydown', e => { if (e.key==='Backspace' && unitInp.value==='') stInp.focus(); });
+
+  function getValue() { return `${numInp.value}|${stInp.value.trim()}|${unitInp.value.trim()}`; }
+  function setValue(val) {
+    const p = val.split('|');
+    numInp.value=p[0]||''; stInp.value=p[1]||''; unitInp.value=p[2]||'';
+    [numInp,stInp,unitInp].forEach(clearErr);
+  }
+
+  registerField(fieldDef.id, {
+    elements: [numInp, stInp, unitInp],
+    getValue, setValue,
+    clearErrors: () => [numInp,stInp,unitInp].forEach(clearErr),
+    validate: () => {
+      if (!numInp.value.trim()) return { el: numInp, msg: 'Street number is required' };
+      if (!stInp.value.trim())  return { el: stInp,  msg: 'Street name is required' };
+      return null;
+    },
+    storeKey: 'reg_' + fieldDef.id,
+    populateFn: setValue,
+    /* Display value strips the pipe separators */
+    displayValue: () => [numInp.value, stInp.value.trim(), unitInp.value.trim()].filter(Boolean).join(' ')
+  });
+}
+
+/* ── Builder: city-province ── */
+function buildCityProvinceField(fieldDef, container) {
+  const grid = document.createElement('div'); grid.className = 'field-row-2col';
+
+  const cityInp = makeInput('seg-full', {
+    type:'text', inputmode:'text',
+    autocapitalize:'words', autocorrect:'off', spellcheck:'false',
+    placeholder:'City', 'aria-label':'City'
+  });
+  const provSel = makeSelect('seg-select', OPTION_SETS.provinces, 'Province');
+  grid.appendChild(cityInp); grid.appendChild(provSel);
+  container.appendChild(grid);
+  FOCUS_CHAIN.push(cityInp, provSel);
+
+  cityInp.addEventListener('input',    () => clearErr(cityInp));
+  provSel.addEventListener('change',   () => clearErr(provSel));
+
+  function getValue() { return `${cityInp.value.trim()}|${provSel.value}`; }
+  function setValue(val) {
+    const p=val.split('|'); cityInp.value=p[0]||''; provSel.value=p[1]||'';
+    [cityInp,provSel].forEach(clearErr);
+  }
+
+  registerField(fieldDef.id, {
+    elements: [cityInp, provSel],
+    getValue, setValue,
+    clearErrors: () => [cityInp,provSel].forEach(clearErr),
+    validate: () => {
+      if (!cityInp.value.trim()) return { el: cityInp, msg: 'City is required' };
+      if (!provSel.value)        return { el: provSel, msg: 'Please select a province' };
+      return null;
+    },
+    storeKey: 'reg_' + fieldDef.id,
+    populateFn: setValue,
+    displayValue: () => `${cityInp.value.trim()} ${provSel.value}`
+  });
+}
+
+/* ── Builder: dropdown ── */
+function buildDropdownField(fieldDef, container) {
+  const opts = OPTION_SETS[fieldDef.optionSet] || [];
+  const sel  = makeSelect('seg-select', opts, fieldDef.placeholder || `Select ${fieldDef.label}`);
+  sel.style.width = '100%';
+  container.appendChild(sel);
+  FOCUS_CHAIN.push(sel);
+  sel.addEventListener('change', () => clearErr(sel));
+
+  registerField(fieldDef.id, {
+    elements: [sel],
+    getValue:    () => sel.value,
+    setValue:    v  => { sel.value = v; clearErr(sel); },
+    clearErrors: () => clearErr(sel),
+    validate: () => {
+      if (!sel.value) return { el: sel, msg: `${fieldDef.label} is required` };
+      return null;
+    },
+    storeKey: 'reg_' + fieldDef.id,
+    populateFn: v => { sel.value = v; clearErr(sel); }
+  });
+}
+
+/* ── Render all fields ── */
+function renderForm() {
+  document.getElementById('form-title').textContent    = FORM_TITLE;
+  document.getElementById('form-subtitle').textContent = FORM_SUBTITLE;
+  const container = document.getElementById('form-fields');
+
+  FORM_FIELDS.forEach((fieldDef, idx) => {
+    if (idx > 0) {
+      const hr = document.createElement('hr'); hr.className = 'divider';
+      container.appendChild(hr);
+    }
+    const group = document.createElement('div'); group.className = 'field-group';
+    const lbl   = document.createElement('p');   lbl.className   = 'field-label';
+    lbl.textContent = fieldDef.label;
+    group.appendChild(lbl);
+
+    switch (fieldDef.type) {
+      case 'alpha-full':    buildFullField(fieldDef, group, true);  break;
+      case 'free-full':     buildFullField(fieldDef, group, false); break;
+      case 'split':         buildSplitField(fieldDef, group);       break;
+      case 'address':       buildAddressField(fieldDef, group);     break;
+      case 'city-province': buildCityProvinceField(fieldDef, group);break;
+      case 'dropdown':      buildDropdownField(fieldDef, group);    break;
     }
 
-    const dobStr  = `${dobD.value.padStart(2,'0')}-${dobM.value.toUpperCase()}-${dobY.value}`;
-    const addrStr = `${addrNum.value}|${addrSt.value.trim()}|${addrUnit.value.trim()}`;
-    const cityStr = `${city.value.trim()}|${province.value}`;
-    const sinStr  = sin.map(el => el.value).join(' ');
-    const pcStr   = pc.map(el => el.value.toUpperCase()).join('').replace(/^(.{3})(.{3})$/, '$1 $2');
-    const ramqStr = `${ramqA.value.toUpperCase()} ${ramqN.value}`;
+    /* Chips container */
+    const chips = document.createElement('div');
+    chips.className = 'chips'; chips.id = 'chips-' + fieldDef.id;
+    group.appendChild(chips);
+    container.appendChild(group);
+  });
 
-    addToHistory('reg_name',    name_.value.trim());
-    addToHistory('reg_dob',     dobStr);
-    addToHistory('reg_address', addrStr);
-    addToHistory('reg_city',    cityStr);
-    addToHistory('reg_sin',     sinStr);
-    addToHistory('reg_pc',      pcStr);
-    addToHistory('reg_ramq',    ramqStr);
+  /* Wire focus chain: last Enter key on last field submits */
+  const lastEl = FOCUS_CHAIN[FOCUS_CHAIN.length - 1];
+  if (lastEl) lastEl.addEventListener('keydown', e => { if (e.key==='Enter') submitForm(); });
 
-    renderAllChips();
-
-    const addrDisplay = [addrNum.value, addrSt.value.trim(), addrUnit.value.trim()].filter(Boolean).join(' ');
-    showMsg(`Saved: ${name_.value.trim()} · ${dobStr} · ${addrDisplay}, ${city.value.trim()} ${province.value} · ${ramqStr}`, 'ok');
-
-    [name_, dobD, dobM, dobY, addrNum, addrSt, addrUnit, city, ...sin, ...pc, ramqA, ramqN].forEach(el => el.value = '');
-    province.value = '';
-    name_.focus();
-  }
-
-  document.getElementById('submit-btn').addEventListener('click', submitForm);
-
-  /* ── Helpers ── */
-  function clearErr(el)     { if (el && el.classList) el.classList.remove('error'); }
-  function showMsg(t, type) { msg.textContent = t; msg.className = 'msg visible ' + type; }
-  function clearMsg()       { msg.textContent = ''; msg.className = 'msg'; }
-
-  function renderAllChips() {
-    renderChips('chips-name',    'reg_name',    populateName);
-    renderChips('chips-dob',     'reg_dob',     populateDob);
-    renderChips('chips-address', 'reg_address', populateAddress);
-    renderChips('chips-city',    'reg_city',    populateCity);
-    renderChips('chips-sin',     'reg_sin',     populateSIN);
-    renderChips('chips-pc',      'reg_pc',      populatePC);
-    renderChips('chips-ramq',    'reg_ramq',    populateRAMQ);
-  }
-
-  /* ── Init ── */
   renderAllChips();
-  name_.focus();
+  if (FOCUS_CHAIN[0]) FOCUS_CHAIN[0].focus();
+}
+
+/* ── Chip rendering for all fields ── */
+function renderAllChips() {
+  Object.entries(FIELD_REGISTRY).forEach(([id, reg]) => {
+    renderChips('chips-' + id, reg.storeKey, reg.populateFn);
+  });
+}
+
+/* ── Validation ── */
+function validateAll() {
+  for (const fieldDef of FORM_FIELDS) {
+    const reg = FIELD_REGISTRY[fieldDef.id];
+    if (!reg || fieldDef.required === false) continue;
+    const err = reg.validate();
+    if (err) return err;
+  }
+  return null;
+}
+
+/* ── Submit ── */
+function submitForm() {
+  clearMsg();
+  Object.values(FIELD_REGISTRY).forEach(r => r.clearErrors());
+
+  const err = validateAll();
+  if (err) {
+    err.el.classList.add('error');
+    if (err.el.focus) err.el.focus();
+    showMsg(err.msg, 'err');
+    return;
+  }
+
+  /* Save all fields to history */
+  Object.entries(FIELD_REGISTRY).forEach(([id, reg]) => {
+    const v = reg.getValue();
+    if (v && v.replace(/[\|\s\-]/g,'')) addToHistory(reg.storeKey, v);
+  });
+
+  renderAllChips();
+
+  /* Build a readable summary */
+  const parts = FORM_FIELDS.map(f => {
+    const reg = FIELD_REGISTRY[f.id];
+    if (!reg) return null;
+    return (reg.displayValue ? reg.displayValue() : reg.getValue()) || null;
+  }).filter(Boolean);
+  showMsg('Saved: ' + parts.join(' · '), 'ok');
+
+  /* Clear all fields */
+  Object.values(FIELD_REGISTRY).forEach(reg => {
+    reg.elements.forEach(el => {
+      if (el.tagName === 'SELECT') el.value = '';
+      else el.value = '';
+    });
+  });
+  if (FOCUS_CHAIN[0]) FOCUS_CHAIN[0].focus();
+}
+
+document.getElementById('submit-btn').addEventListener('click', submitForm);
+
+/* ── Helpers ── */
+function clearErr(el)     { if (el && el.classList) el.classList.remove('error'); }
+function showMsg(t, type) { const m=document.getElementById('msg'); m.textContent=t; m.className='msg visible '+type; }
+function clearMsg()       { const m=document.getElementById('msg'); m.textContent=''; m.className='msg'; }
+
+/* ── Boot ── */
+renderForm();
 </script>
 </body>
 </html>
