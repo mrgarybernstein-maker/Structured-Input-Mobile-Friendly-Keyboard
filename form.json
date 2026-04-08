@@ -1,0 +1,65 @@
+{
+  "title": "Patient registration",
+  "subtitle": "Please fill in all fields",
+  "submitLabel": "Submit",
+
+  "fields": [
+    {
+      "id":    "name",
+      "label": "Full name",
+      "type":  "alpha-full"
+    },
+    {
+      "id":      "dob",
+      "label":   "Date of birth",
+      "type":    "split",
+      "pattern": "NN-MMM-NNNN"
+    },
+    {
+      "id":    "address",
+      "label": "Address",
+      "type":  "address"
+    },
+    {
+      "id":    "city",
+      "label": "City & province",
+      "type":  "city-province"
+    },
+    {
+      "id":      "sin",
+      "label":   "Social Insurance Number (SIN)",
+      "type":    "split",
+      "pattern": "NNN NNN NNN"
+    },
+    {
+      "id":      "postal",
+      "label":   "Postal code",
+      "type":    "split",
+      "pattern": "ANA NAN"
+    },
+    {
+      "id":      "ramq",
+      "label":   "RAMQ number",
+      "type":    "split",
+      "pattern": "AAAA NNNNNNNN"
+    }
+  ],
+
+  "optionSets": {
+    "provinces": [
+      { "value": "AB", "label": "AB – Alberta" },
+      { "value": "BC", "label": "BC – British Columbia" },
+      { "value": "MB", "label": "MB – Manitoba" },
+      { "value": "NB", "label": "NB – New Brunswick" },
+      { "value": "NL", "label": "NL – Newfoundland & Labrador" },
+      { "value": "NS", "label": "NS – Nova Scotia" },
+      { "value": "NT", "label": "NT – Northwest Territories" },
+      { "value": "NU", "label": "NU – Nunavut" },
+      { "value": "ON", "label": "ON – Ontario" },
+      { "value": "PE", "label": "PE – Prince Edward Island" },
+      { "value": "QC", "label": "QC – Québec" },
+      { "value": "SK", "label": "SK – Saskatchewan" },
+      { "value": "YT", "label": "YT – Yukon" }
+    ]
+  }
+}
