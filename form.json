@@ -1,0 +1,52 @@
+{
+  "title": "Patient registration from WORD Doc",
+  "subtitle": "Please fill in all fields",
+  "submitLabel": "Submit",
+
+  "fields": [
+    {
+      "id":    "name",
+      "label": "Full name",
+      "type":  "alpha-full",
+      "required": true
+    },
+    {
+      "id":      "dob",
+      "label":   "Date of birth",
+      "type":    "split",
+      "pattern": "NN-MMM-NNNN",
+      "required": true
+    },
+    {
+      "id":    "city",
+      "label": "City & province",
+      "type":  "city-province",
+      "required": true
+    },
+    {
+      "id":      "sin",
+      "label":   "Social Insurance Number",
+      "type":    "split",
+      "pattern": "NNN NNN NNN",
+      "required": false
+    }
+  ],
+
+  "optionSets": {
+    "provinces": [
+      { "value": "AB", "label": "AB – Alberta" },
+      { "value": "BC", "label": "BC – British Columbia" },
+      { "value": "MB", "label": "MB – Manitoba" },
+      { "value": "NB", "label": "NB – New Brunswick" },
+      { "value": "NL", "label": "NL – Newfoundland & Labrador" },
+      { "value": "NS", "label": "NS – Nova Scotia" },
+      { "value": "NT", "label": "NT – Northwest Territories" },
+      { "value": "NU", "label": "NU – Nunavut" },
+      { "value": "ON", "label": "ON – Ontario" },
+      { "value": "PE", "label": "PE – Prince Edward Island" },
+      { "value": "QC", "label": "QC – Québec" },
+      { "value": "SK", "label": "SK – Saskatchewan" },
+      { "value": "YT", "label": "YT – Yukon" }
+    ]
+  }
+}
