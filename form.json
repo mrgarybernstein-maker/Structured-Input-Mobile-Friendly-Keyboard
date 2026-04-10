@@ -1,34 +1,48 @@
 {
-  "title": "Patient registration from WORD Doc",
+  "title": "Patient registration",
   "subtitle": "Please fill in all fields",
   "submitLabel": "Submit",
 
   "fields": [
     {
-      "id":    "name",
-      "label": "Full name",
-      "type":  "alpha-full",
+      "id":       "name",
+      "label":    "Full name",
+      "type":     "alpha-full",
       "required": true
     },
     {
-      "id":      "dob",
-      "label":   "Date of birth",
-      "type":    "split",
-      "pattern": "NN-MMM-NNNN",
+      "id":       "dob",
+      "label":    "Date of birth",
+      "type":     "split",
+      "pattern":  "NN-MMM-NNNN",
       "required": true
     },
     {
-      "id":    "city",
-      "label": "City & province",
-      "type":  "city-province",
+      "id":       "city",
+      "label":    "City & province",
+      "type":     "city-province",
       "required": true
     },
     {
-      "id":      "sin",
-      "label":   "Social Insurance Number",
-      "type":    "split",
-      "pattern": "NNN NNN NNN",
-      "required": false
+      "id":       "sin",
+      "label":    "Social Insurance Number",
+      "type":     "split",
+      "pattern":  "NNN NNN NNN",
+      "required": true
+    },
+    {
+      "id":       "ramq",
+      "label":    "RAMQ",
+      "type":     "split",
+      "pattern":  "AAAA NNNNNN",
+      "required": true
+    },
+    {
+      "id":       "postal",
+      "label":    "Postal code",
+      "type":     "split",
+      "pattern":  "ANA NAN",
+      "required": true
     }
   ],
 
