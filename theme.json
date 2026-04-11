@@ -1,0 +1,28 @@
+{
+  "background":     "#ffcccc",
+  "cardColor":      "#ffffff",
+  "cardWidth":      "480",
+  "cornerRadius":   "16",
+
+  "fontFamily":     "Georgia, serif",
+  "fontSizeBase":   "17",
+
+  "titleColor":     "#1a1a1a",
+  "subtitleColor":  "#888888",
+  "labelColor":     "#555555",
+
+  "fieldBackground":  "#fafafa",
+  "fieldBorder":      "#e0e0e0",
+  "fieldFocusBorder": "#1a56db",
+  "fieldErrorBorder": "#e05252",
+
+  "buttonLabel":    "Submit",
+  "buttonColor":    "#1a56db",
+  "buttonText":     "#ffffff",
+
+  "logo":           "mylogo.png",
+  "logoWidth":      "120",
+  "logoPosition":   "center",
+
+  "darkMode":       "auto"
+}
