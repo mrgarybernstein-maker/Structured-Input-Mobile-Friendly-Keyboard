@@ -1,48 +1,55 @@
 {
-  "title": "Patient registration V2",
-  "subtitle": "Please fill in all fields",
-  "submitLabel": "Submit",
+  "title": "Book an appointment",
+  "subtitle": "Please fill in all fields marked with *",
+  "submitLabel": "Continue",
 
   "fields": [
     {
-      "id":       "name",
-      "label":    "Full name",
+      "id":       "firstname",
+      "label":    "* First name",
       "type":     "alpha-full",
       "required": true
     },
     {
+      "id":       "lastname",
+      "label":    "* Last name",
+      "type":     "alpha-full",
+      "required": true
+    },
+    {
+      "id":          "email",
+      "label":       "Email",
+      "type":        "free-full",
+      "placeholder": "your@email.com",
+      "required":    false
+    },
+    {
+      "id":          "emailconfirm",
+      "label":       "Email confirmation",
+      "type":        "free-full",
+      "placeholder": "your@email.com",
+      "required":    false
+    },
+    {
       "id":       "dob",
-      "label":    "Date of birth",
+      "label":    "* Date of birth",
       "type":     "split",
       "pattern":  "NN-MMM-NNNN",
       "required": true
     },
     {
-      "id":       "city",
-      "label":    "City & province",
-      "type":     "city-province",
-      "required": true
-    },
-    {
-      "id":       "sin",
-      "label":    "Social Insurance Number",
+      "id":       "mobile",
+      "label":    "Mobile",
       "type":     "split",
-      "pattern":  "NNN NNN NNN",
-      "required": true
+      "pattern":  "NNN NNN NNNN",
+      "required": false
     },
     {
       "id":       "ramq",
-      "label":    "RAMQ",
+      "label":    "Health Insurance Number (RAMQ)",
       "type":     "split",
-      "pattern":  "AAAA NNNNNN",
-      "required": true
-    },
-    {
-      "id":       "postal",
-      "label":    "Postal code",
-      "type":     "split",
-      "pattern":  "ANA NAN",
-      "required": true
+      "pattern":  "AAAA NNNNNN NN",
+      "required": false
     }
   ],
 
