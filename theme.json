@@ -1,28 +1,28 @@
 {
-  "background":     "#ffcccc",
+  "background":     "#ffffff",
   "cardColor":      "#ffffff",
-  "cardWidth":      "480",
-  "cornerRadius":   "16",
+  "cardWidth":      "760",
+  "cornerRadius":   "4",
 
-  "fontFamily":     "Georgia, serif",
-  "fontSizeBase":   "17",
+  "fontFamily":     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  "fontSizeBase":   "16",
 
-  "titleColor":     "#1a1a1a",
-  "subtitleColor":  "#888888",
-  "labelColor":     "#555555",
+  "titleColor":     "#333333",
+  "subtitleColor":  "#666666",
+  "labelColor":     "#444444",
 
-  "fieldBackground":  "#fafafa",
-  "fieldBorder":      "#e0e0e0",
-  "fieldFocusBorder": "#1a56db",
+  "fieldBackground":  "#ffffff",
+  "fieldBorder":      "#cccccc",
+  "fieldFocusBorder": "#00a3a6",
   "fieldErrorBorder": "#e05252",
 
-  "buttonLabel":    "Submit",
-  "buttonColor":    "#1a56db",
+  "buttonLabel":    "Continue",
+  "buttonColor":    "#00a3a6",
   "buttonText":     "#ffffff",
 
   "logo":           "myLogo.png",
-  "logoWidth":      "120",
-  "logoPosition":   "center",
+  "logoWidth":      "160",
+  "logoPosition":   "left",
 
-  "darkMode":       "auto"
+  "darkMode":       "off"
 }
