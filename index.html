@@ -7,7 +7,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Theme variables — overwritten at runtime from theme.json */
+    /* Theme variables */
     :root {
       --t-bg:           #f5f5f3;
       --t-card:         #ffffff;
@@ -47,39 +47,100 @@
     #form-logo.align-center { text-align: center; }
     #form-logo.align-right  { text-align: right; }
 
-    .field-group { margin-bottom: 1.5rem; }
-    .field-label { font-size: 13px; font-weight: 500; color: var(--t-label); margin-bottom: 8px; letter-spacing: 0.02em; }
+    /* ── Floating label wrapper ── */
+    .fl-wrap {
+      position: relative;
+      width: 100%;
+    }
 
-    /* Base input / select */
+    /* The floating label element */
+    .fl-label {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: var(--t-label);
+      pointer-events: none;
+      transition: top 0.18s ease, font-size 0.18s ease, color 0.18s ease;
+      background: transparent;
+      padding: 0 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100% - 28px);
+    }
+
+    /* Floated state — triggered by .has-value or :focus-within on wrapper */
+    .fl-wrap.has-value .fl-label,
+    .fl-wrap:focus-within .fl-label {
+      top: 8px;
+      transform: translateY(0);
+      font-size: 11px;
+      color: var(--t-field-focus);
+      background: var(--t-card);
+      padding: 0 4px;
+      left: 10px;
+    }
+
+    /* ── Base inputs ── */
     .seg, .seg-full, .seg-select {
-      border: 1.5px solid var(--t-field-border); border-radius: 10px;
-      background: var(--t-field-bg); color: var(--t-title);
-      font-size: var(--t-font-size); font-weight: 500; height: 54px;
-      outline: none; -webkit-appearance: none;
+      border: 1.5px solid var(--t-field-border);
+      border-radius: var(--t-radius);
+      background: var(--t-field-bg);
+      color: var(--t-title);
+      font-size: var(--t-font-size);
+      font-weight: 500;
+      height: 58px;
+      outline: none;
+      -webkit-appearance: none;
       transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
     }
     .seg:focus, .seg-full:focus, .seg-select:focus {
-      border-color: var(--t-field-focus); background: var(--t-card);
-      box-shadow: 0 0 0 3px rgba(74,144,217,0.15);
+      border-color: var(--t-field-focus);
+      background: var(--t-card);
+      box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
     }
     .seg.error, .seg-full.error, .seg-select.error {
-      border-color: var(--t-field-error); box-shadow: 0 0 0 3px rgba(224,82,82,0.12);
+      border-color: var(--t-field-error);
+      box-shadow: 0 0 0 3px rgba(224,82,82,0.12);
     }
-    .seg-full { width: 100%; padding: 13px 14px; }
-    .seg-full::placeholder { font-weight: 400; font-size: 14px; color: #bbb; }
-    .seg      { font-size: 18px; font-weight: 600; text-align: center; padding: 10px 0; min-width: 0; }
-    .seg::placeholder { font-weight: 400; font-size: 13px; color: #bbb; }
+
+    /* Full-width single input with floating label */
+    .seg-full {
+      width: 100%;
+      padding: 22px 14px 8px;
+    }
+    .seg-full::placeholder { color: transparent; }
+
+    /* Select with floating label */
     .seg-select {
-      padding: 0 36px 0 14px; cursor: pointer;
+      width: 100%;
+      padding: 22px 36px 8px 14px;
+      cursor: pointer;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
+      background-repeat: no-repeat;
+      background-position: right 12px center;
     }
+    /* Select always shows label floated when a value is chosen */
+    .fl-wrap.has-value .fl-label { color: var(--t-label); }
+
+    /* Split segments — no floating label, use old-style label above */
+    .seg {
+      font-size: 18px; font-weight: 600;
+      text-align: center; padding: 10px 0; min-width: 0;
+    }
+    .seg::placeholder { font-weight: 400; font-size: 13px; color: #bbb; }
+
+    /* field-group for split/address/city — keeps label above */
+    .field-group      { margin-bottom: 1.25rem; }
+    .field-label      { font-size: 13px; font-weight: 500; color: var(--t-label); margin-bottom: 8px; letter-spacing: 0.02em; }
+    /* field-group-float removes the above-label, uses floating label instead */
+    .field-group-float { margin-bottom: 1.25rem; }
 
     /* Layout helpers */
     .field-row      { display: flex; align-items: center; gap: 6px; }
     .field-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .field-row-2col .seg-full,
-    .field-row-2col .seg-select { width: 100%; }
     .sep       { font-size: 20px; color: #ccc; font-weight: 300; user-select: none; flex-shrink: 0; }
     .sep-space { width: 10px; flex-shrink: 0; }
     .opt-hint  { font-size: 13px; color: #bbb; padding-left: 4px; }
@@ -104,9 +165,9 @@
     .chip-x:hover { color: #e05252; background: #fce8e8; }
 
     /* Misc */
-    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 0.25rem 0 1.5rem; }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 0.25rem 0 1.25rem; }
     .btn {
-      width: 100%; padding: 14px; border: none; border-radius: 10px;
+      width: 100%; padding: 14px; border: none; border-radius: var(--t-radius);
       background: var(--t-btn-bg); color: var(--t-btn-text);
       font-size: 15px; font-weight: 600; cursor: pointer; letter-spacing: 0.01em;
       transition: background 0.15s, transform 0.1s;
@@ -127,26 +188,28 @@
 
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
-      body          { background: var(--t-bg, #1a1a1a); }
-      .card         { background: var(--t-card, #242424); box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2); }
-      h1            { color: var(--t-title, #f0f0f0); }
-      .subtitle     { color: var(--t-subtitle, #666); }
-      .field-label  { color: var(--t-label, #999); }
+      body  { background: var(--t-bg, #1a1a1a); }
+      .card { background: var(--t-card, #242424); box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2); }
+      h1    { color: var(--t-title, #f0f0f0); }
+      .subtitle { color: var(--t-subtitle, #666); }
+      .field-label { color: var(--t-label, #999); }
       .seg, .seg-full, .seg-select { background: #1e1e1e; border-color: #383838; color: #f0f0f0; }
       .seg:focus, .seg-full:focus, .seg-select:focus { background: #1e1e1e; }
-      .seg::placeholder, .seg-full::placeholder { color: #555; }
-      .seg-select   {
+      .seg::placeholder { color: #555; }
+      .seg-select {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       }
-      .sep          { color: #444; }
-      .chip         { background: #2a2a2a; border-color: #383838; color: #d0d0d0; }
+      .fl-wrap.has-value .fl-label,
+      .fl-wrap:focus-within .fl-label { background: #1e1e1e; }
+      .sep  { color: #444; }
+      .chip { background: #2a2a2a; border-color: #383838; color: #d0d0d0; }
       .chip:hover, .chip:active { background: #1a2d45; border-color: #4a90d9; color: #7ab8f5; }
-      .chip-x       { color: #555; }
-      .btn          { filter: brightness(1.15); }
-      .msg.err      { background: #2d1515; color: #f08080; }
-      .msg.ok       { background: #0f2318; color: #6fcf97; }
-      .divider      { border-color: #2e2e2e; }
-      .opt-hint     { color: #555; }
+      .chip-x { color: #555; }
+      .btn  { filter: brightness(1.15); }
+      .msg.err { background: #2d1515; color: #f08080; }
+      .msg.ok  { background: #0f2318; color: #6fcf97; }
+      .divider { border-color: #2e2e2e; }
+      .opt-hint { color: #555; }
     }
   </style>
 </head>
@@ -177,7 +240,7 @@ function maxDaysInMonth(mon,yr) {
   return (mon==='FEB'&&isLeapYear(yr)) ? 29 : MONTH_DAYS[mon];
 }
 
-/* Storage */
+/* ── Storage ── */
 function loadHistory(key)    { try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];} }
 function saveHistory(key,h)  { try{localStorage.setItem(key,JSON.stringify(h));}catch(e){} }
 function addToHistory(key,val) {
@@ -187,7 +250,7 @@ function addToHistory(key,val) {
 }
 function removeFromHistory(key,val){ saveHistory(key,loadHistory(key).filter(x=>x!==val)); }
 
-/* Chips */
+/* ── Chips ── */
 function renderChips(containerId,storeKey,populateFn) {
   const el=document.getElementById(containerId); if(!el) return;
   const h=loadHistory(storeKey); el.innerHTML='';
@@ -196,15 +259,12 @@ function renderChips(containerId,storeKey,populateFn) {
     const label=document.createElement('span'); label.textContent=val;
     label.addEventListener('click',()=>populateFn(val));
     const x=document.createElement('span'); x.className='chip-x'; x.textContent='✕'; x.title='Remove';
-    x.addEventListener('click',e=>{
-      e.stopPropagation(); removeFromHistory(storeKey,val);
-      renderChips(containerId,storeKey,populateFn);
-    });
+    x.addEventListener('click',e=>{ e.stopPropagation(); removeFromHistory(storeKey,val); renderChips(containerId,storeKey,populateFn); });
     chip.appendChild(label); chip.appendChild(x); el.appendChild(chip);
   });
 }
 
-/* DOM helpers */
+/* ── DOM helpers ── */
 function makeInput(cls,attrs={}) {
   const el=document.createElement('input'); el.className=cls;
   Object.entries(attrs).forEach(([k,v])=>{ if(k==='style') el.style.cssText=v; else el.setAttribute(k,v); });
@@ -212,18 +272,41 @@ function makeInput(cls,attrs={}) {
 }
 function makeSelect(cls,options,placeholder) {
   const el=document.createElement('select'); el.className=cls;
-  const def=document.createElement('option'); def.value=''; def.textContent=placeholder;
+  const def=document.createElement('option'); def.value=''; def.textContent=placeholder||'';
   el.appendChild(def);
   options.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.value; opt.textContent=o.label; el.appendChild(opt); });
   return el;
 }
 
-/* Helpers */
+/* ── Floating label wrapper ──
+   Creates: <div class="fl-wrap"><input/><label class="fl-label">…</label></div>
+   Adds has-value class whenever the input has content.
+*/
+function makeFloatWrap(inp, labelText) {
+  const wrap = document.createElement('div');
+  wrap.className = 'fl-wrap';
+  const lbl = document.createElement('label');
+  lbl.className = 'fl-label';
+  lbl.textContent = labelText;
+  wrap.appendChild(inp);
+  wrap.appendChild(lbl);
+
+  function update() {
+    const hasVal = (inp.tagName==='SELECT') ? inp.value !== '' : inp.value.trim() !== '';
+    wrap.classList.toggle('has-value', hasVal);
+  }
+  inp.addEventListener('input',  update);
+  inp.addEventListener('change', update);
+  update();
+  return { wrap, update };
+}
+
+/* ── Helpers ── */
 function clearErr(el)     { if(el&&el.classList) el.classList.remove('error'); }
 function showMsg(t,type)  { const m=document.getElementById('msg'); m.textContent=t; m.className='msg visible '+type; }
 function clearMsg()       { const m=document.getElementById('msg'); m.textContent=''; m.className='msg'; }
 
-/* Parse pattern string */
+/* ── Parse pattern ── */
 function parsePattern(pattern) {
   const tokens=[]; let i=0;
   while(i<pattern.length) {
@@ -233,9 +316,7 @@ function parsePattern(pattern) {
     while(i<pattern.length&&pattern[i]===ch){ run+=ch; i++; }
     const isMonth=(ch==='M'&&run.length===3);
     const isAlpha=ch==='A'||isMonth; const isNum=ch==='N';
-    const placeholder=isMonth?'MMM':run;
-    const width=Math.max(46,run.length*22+16);
-    tokens.push({kind:'seg',chars:run.length,isAlpha,isNum,isMonth,placeholder,width});
+    tokens.push({kind:'seg',chars:run.length,isAlpha,isNum,isMonth,placeholder:isMonth?'MMM':run,width:Math.max(46,run.length*22+16)});
   }
   return tokens;
 }
@@ -244,6 +325,7 @@ function parsePattern(pattern) {
    FIELD BUILDERS
    ============================================================ */
 
+/* ── Split field (segmented, label above) ── */
 function buildSplitField(def,container,focusChain,optionSets,register) {
   const tokens=parsePattern(def.pattern);
   const row=document.createElement('div'); row.className='field-row';
@@ -300,9 +382,7 @@ function buildSplitField(def,container,focusChain,optionSets,register) {
     const monthSeg=inputs.find(({tok})=>tok.isMonth);
     const numSegs=inputs.filter(({tok})=>tok.isNum);
     if(monthSeg&&numSegs.length>=2){
-      const mon=monthSeg.el.value.toUpperCase();
-      const day=parseInt(numSegs[0].el.value);
-      const yr=parseInt(numSegs[numSegs.length-1].el.value);
+      const mon=monthSeg.el.value.toUpperCase(),day=parseInt(numSegs[0].el.value),yr=parseInt(numSegs[numSegs.length-1].el.value);
       if(MONTHS.includes(mon)&&!isNaN(day)&&!isNaN(yr)&&yr>1000){
         const max=maxDaysInMonth(mon,yr);
         if(day<1||day>max) return {el:numSegs[0].el,msg:`${mon} ${yr} only has ${max} days`};
@@ -313,14 +393,23 @@ function buildSplitField(def,container,focusChain,optionSets,register) {
   register(def.id,{ elements:inputs.map(({el})=>el), getValue, setValue, clearErrors:()=>inputs.forEach(({el})=>clearErr(el)), validate, storeKey:'reg_'+def.id, populateFn:setValue });
 }
 
+/* ── Full-width field with floating label ── */
 function buildFullField(def,container,focusChain,optionSets,register,alphaOnly) {
-  const inp=makeInput('seg-full',{ type:'text', inputmode:'text', autocapitalize:'words', autocorrect:'off', spellcheck:'false', placeholder:def.placeholder||def.label, 'aria-label':def.label });
-  container.appendChild(inp); focusChain.push(inp);
+  const inp=makeInput('seg-full',{
+    type:'text', inputmode:'text',
+    autocapitalize:'words', autocorrect:'off', spellcheck:'false',
+    'aria-label':def.label
+  });
+  const {wrap, update} = makeFloatWrap(inp, def.label);
+  container.appendChild(wrap);
+  focusChain.push(inp);
+
   inp.addEventListener('input',()=>{ if(alphaOnly) inp.value=inp.value.replace(/[^a-zA-Z\s'\-]/g,''); clearErr(inp); });
+
   register(def.id,{
     elements:[inp],
     getValue:()=>inp.value.trim(),
-    setValue:v=>{inp.value=v;clearErr(inp);},
+    setValue:v=>{ inp.value=v; clearErr(inp); update(); },
     clearErrors:()=>clearErr(inp),
     validate:()=>{
       const v=inp.value.trim();
@@ -328,10 +417,12 @@ function buildFullField(def,container,focusChain,optionSets,register,alphaOnly) 
       if(alphaOnly&&!/^[a-zA-Z\s'\-]+$/.test(v)) return {el:inp,msg:`${def.label} must contain letters only`};
       return null;
     },
-    storeKey:'reg_'+def.id, populateFn:v=>{inp.value=v;clearErr(inp);}
+    storeKey:'reg_'+def.id,
+    populateFn:v=>{ inp.value=v; clearErr(inp); update(); }
   });
 }
 
+/* ── Address field ── */
 function buildAddressField(def,container,focusChain,optionSets,register) {
   const row1=document.createElement('div'); row1.className='field-row'; row1.style.marginBottom='8px';
   const numInp=makeInput('seg',{type:'text',inputmode:'numeric',maxlength:'6',placeholder:'No.',autocomplete:'off',autocorrect:'off',spellcheck:'false','aria-label':'Street number',style:'width:88px;'});
@@ -354,52 +445,58 @@ function buildAddressField(def,container,focusChain,optionSets,register) {
   register(def.id,{
     elements:[numInp,stInp,unitInp], getValue, setValue,
     clearErrors:()=>[numInp,stInp,unitInp].forEach(clearErr),
-    validate:()=>{
-      if(!numInp.value.trim()) return {el:numInp,msg:'Street number is required'};
-      if(!stInp.value.trim())  return {el:stInp,msg:'Street name is required'};
-      return null;
-    },
+    validate:()=>{ if(!numInp.value.trim()) return {el:numInp,msg:'Street number is required'}; if(!stInp.value.trim()) return {el:stInp,msg:'Street name is required'}; return null; },
     storeKey:'reg_'+def.id, populateFn:setValue,
     displayValue:()=>[numInp.value,stInp.value.trim(),unitInp.value.trim()].filter(Boolean).join(' ')
   });
 }
 
+/* ── City + Province with floating labels ── */
 function buildCityProvinceField(def,container,focusChain,optionSets,register) {
   const grid=document.createElement('div'); grid.className='field-row-2col';
-  const cityInp=makeInput('seg-full',{type:'text',inputmode:'text',autocapitalize:'words',autocorrect:'off',spellcheck:'false',placeholder:'City','aria-label':'City'});
+
+  const cityInp=makeInput('seg-full',{type:'text',inputmode:'text',autocapitalize:'words',autocorrect:'off',spellcheck:'false','aria-label':'City'});
+  const {wrap:cityWrap, update:cityUpdate}=makeFloatWrap(cityInp,'City');
+
   const provinces=optionSets.provinces||[];
-  const provSel=makeSelect('seg-select',provinces,'Province');
-  grid.appendChild(cityInp); grid.appendChild(provSel);
-  container.appendChild(grid); focusChain.push(cityInp,provSel);
+  const provSel=makeSelect('seg-select',provinces,'');
+  provSel.style.width='100%';
+  const {wrap:provWrap, update:provUpdate}=makeFloatWrap(provSel,'Province');
+
+  grid.appendChild(cityWrap); grid.appendChild(provWrap);
+  container.appendChild(grid);
+  focusChain.push(cityInp,provSel);
+
   cityInp.addEventListener('input',()=>clearErr(cityInp));
   provSel.addEventListener('change',()=>clearErr(provSel));
+
   const getValue=()=>`${cityInp.value.trim()}|${provSel.value}`;
-  const setValue=val=>{ const p=val.split('|'); cityInp.value=p[0]||''; provSel.value=p[1]||''; [cityInp,provSel].forEach(clearErr); };
+  const setValue=val=>{ const p=val.split('|'); cityInp.value=p[0]||''; provSel.value=p[1]||''; [cityInp,provSel].forEach(clearErr); cityUpdate(); provUpdate(); };
   register(def.id,{
     elements:[cityInp,provSel], getValue, setValue,
     clearErrors:()=>[cityInp,provSel].forEach(clearErr),
-    validate:()=>{
-      if(!cityInp.value.trim()) return {el:cityInp,msg:'City is required'};
-      if(!provSel.value)        return {el:provSel,msg:'Please select a province'};
-      return null;
-    },
+    validate:()=>{ if(!cityInp.value.trim()) return {el:cityInp,msg:'City is required'}; if(!provSel.value) return {el:provSel,msg:'Please select a province'}; return null; },
     storeKey:'reg_'+def.id, populateFn:setValue,
     displayValue:()=>`${cityInp.value.trim()} ${provSel.value}`.trim()
   });
 }
 
+/* ── Dropdown with floating label ── */
 function buildDropdownField(def,container,focusChain,optionSets,register) {
   const opts=optionSets[def.optionSet]||[];
-  const sel=makeSelect('seg-select',opts,def.placeholder||`Select ${def.label}`);
-  sel.style.width='100%'; container.appendChild(sel); focusChain.push(sel);
-  sel.addEventListener('change',()=>clearErr(sel));
+  const sel=makeSelect('seg-select',opts,'');
+  sel.style.width='100%';
+  const {wrap, update}=makeFloatWrap(sel, def.label);
+  container.appendChild(wrap);
+  focusChain.push(sel);
+  sel.addEventListener('change',()=>{ clearErr(sel); update(); });
   register(def.id,{
     elements:[sel],
     getValue:()=>sel.value,
-    setValue:v=>{sel.value=v;clearErr(sel);},
+    setValue:v=>{ sel.value=v; clearErr(sel); update(); },
     clearErrors:()=>clearErr(sel),
     validate:()=>{ if(!sel.value) return {el:sel,msg:`${def.label} is required`}; return null; },
-    storeKey:'reg_'+def.id, populateFn:v=>{sel.value=v;clearErr(sel);}
+    storeKey:'reg_'+def.id, populateFn:v=>{ sel.value=v; clearErr(sel); update(); }
   });
 }
 
@@ -407,38 +504,34 @@ function buildDropdownField(def,container,focusChain,optionSets,register) {
    APPLY THEME
    ============================================================ */
 function applyTheme(t) {
-  const r = document.documentElement;
-  if (t.background)      r.style.setProperty('--t-bg',           t.background);
-  if (t.cardColor)       r.style.setProperty('--t-card',          t.cardColor);
-  if (t.cardWidth)       r.style.setProperty('--t-card-width',    t.cardWidth+'px');
-  if (t.cornerRadius)    r.style.setProperty('--t-radius',        t.cornerRadius+'px');
-  if (t.fontFamily)      r.style.setProperty('--t-font',          t.fontFamily);
-  if (t.fontSizeBase)    r.style.setProperty('--t-font-size',     t.fontSizeBase+'px');
-  if (t.titleColor)      r.style.setProperty('--t-title',         t.titleColor);
-  if (t.subtitleColor)   r.style.setProperty('--t-subtitle',      t.subtitleColor);
-  if (t.labelColor)      r.style.setProperty('--t-label',         t.labelColor);
-  if (t.fieldBackground) r.style.setProperty('--t-field-bg',      t.fieldBackground);
-  if (t.fieldBorder)     r.style.setProperty('--t-field-border',  t.fieldBorder);
-  if (t.fieldFocusBorder)r.style.setProperty('--t-field-focus',   t.fieldFocusBorder);
-  if (t.fieldErrorBorder)r.style.setProperty('--t-field-error',   t.fieldErrorBorder);
-  if (t.buttonColor)     r.style.setProperty('--t-btn-bg',        t.buttonColor);
-  if (t.buttonText)      r.style.setProperty('--t-btn-text',      t.buttonText);
+  const r=document.documentElement;
+  if(t.background)      r.style.setProperty('--t-bg',           t.background);
+  if(t.cardColor)       r.style.setProperty('--t-card',          t.cardColor);
+  if(t.cardWidth)       r.style.setProperty('--t-card-width',    t.cardWidth+'px');
+  if(t.cornerRadius)    r.style.setProperty('--t-radius',        t.cornerRadius+'px');
+  if(t.fontFamily)      r.style.setProperty('--t-font',          t.fontFamily);
+  if(t.fontSizeBase)    r.style.setProperty('--t-font-size',     t.fontSizeBase+'px');
+  if(t.titleColor)      r.style.setProperty('--t-title',         t.titleColor);
+  if(t.subtitleColor)   r.style.setProperty('--t-subtitle',      t.subtitleColor);
+  if(t.labelColor)      r.style.setProperty('--t-label',         t.labelColor);
+  if(t.fieldBackground) r.style.setProperty('--t-field-bg',      t.fieldBackground);
+  if(t.fieldBorder)     r.style.setProperty('--t-field-border',  t.fieldBorder);
+  if(t.fieldFocusBorder)r.style.setProperty('--t-field-focus',   t.fieldFocusBorder);
+  if(t.fieldErrorBorder)r.style.setProperty('--t-field-error',   t.fieldErrorBorder);
+  if(t.buttonColor)     r.style.setProperty('--t-btn-bg',        t.buttonColor);
+  if(t.buttonText)      r.style.setProperty('--t-btn-text',      t.buttonText);
 
-  /* Logo */
-  if (t.logo) {
+  if(t.logo){
     const wrap=document.getElementById('form-logo');
     const img=document.getElementById('form-logo-img');
-    img.src=t.logo;
-    img.style.maxWidth=(t.logoWidth||'120')+'px';
+    img.src=t.logo; img.style.maxWidth=(t.logoWidth||'120')+'px';
     wrap.className=''; wrap.classList.add('align-'+(t.logoPosition||'left'));
     wrap.style.display='block';
   }
-
-  /* Dark mode override */
-  if (t.darkMode==='off') {
-    const style=document.createElement('style');
-    style.textContent='@media(prefers-color-scheme:dark){body,html{background:var(--t-bg)!important;}.card{background:var(--t-card)!important;}}';
-    document.head.appendChild(style);
+  if(t.darkMode==='off'){
+    const s=document.createElement('style');
+    s.textContent='@media(prefers-color-scheme:dark){body,html{background:var(--t-bg)!important;}.card{background:var(--t-card)!important;}.seg,.seg-full,.seg-select{background:var(--t-field-bg)!important;color:var(--t-title)!important;border-color:var(--t-field-border)!important;}.fl-wrap.has-value .fl-label,.fl-wrap:focus-within .fl-label{background:var(--t-card)!important;}}';
+    document.head.appendChild(s);
   }
 }
 
@@ -446,13 +539,8 @@ function applyTheme(t) {
    MAIN
    ============================================================ */
 async function init() {
-  /* Load theme.json — optional, silently skip if missing */
-  try {
-    const res=await fetch('theme.json');
-    if (res.ok) applyTheme(await res.json());
-  } catch(e) { /* theme.json is optional */ }
+  try { const res=await fetch('theme.json'); if(res.ok) applyTheme(await res.json()); } catch(e){}
 
-  /* Load form.json — required */
   let formDef;
   try {
     const res=await fetch('form.json');
@@ -460,57 +548,55 @@ async function init() {
     formDef=await res.json();
   } catch(e) {
     document.getElementById('form-title').textContent='';
-    document.getElementById('form-fields').innerHTML=
-      `<div class="load-error"><strong>Could not load form.json</strong>
-       Make sure form.json is in the same folder as index.html on your web server.<br>
-       (Error: ${e.message})</div>`;
+    document.getElementById('form-fields').innerHTML=`<div class="load-error"><strong>Could not load form.json</strong>Make sure form.json is in the same folder as index.html on your web server.<br>(Error: ${e.message})</div>`;
     return;
   }
 
-  /* Title / subtitle */
   document.title=formDef.title||'Form';
   document.getElementById('form-title').textContent   =formDef.title   ||'';
   document.getElementById('form-subtitle').textContent=formDef.subtitle||'';
 
-  /* Submit button */
   const btn=document.getElementById('submit-btn');
   btn.textContent=formDef.submitLabel||'Submit';
   btn.style.display='';
 
-  const optionSets={};
-  /* Merge optionSets from both files */
-  Object.assign(optionSets, formDef.optionSets||{});
-
-  const fieldRegistry={};
-  const focusChain=[];
+  const optionSets={}; Object.assign(optionSets,formDef.optionSets||{});
+  const fieldRegistry={}; const focusChain=[];
   function register(id,obj){ fieldRegistry[id]=obj; }
 
-  /* Build fields */
   const container=document.getElementById('form-fields');
   (formDef.fields||[]).forEach((def,idx)=>{
     if(idx>0){ const hr=document.createElement('hr'); hr.className='divider'; container.appendChild(hr); }
-    const group=document.createElement('div'); group.className='field-group';
-    const lbl=document.createElement('p'); lbl.className='field-label'; lbl.textContent=def.label;
-    group.appendChild(lbl);
+
+    /* Split and address fields use label-above style; full/dropdown use floating */
+    const useFloating = (def.type==='alpha-full'||def.type==='free-full'||def.type==='dropdown'||def.type==='city-province');
+    const group=document.createElement('div');
+    group.className=useFloating ? 'field-group-float' : 'field-group';
+
+    if(!useFloating){
+      const lbl=document.createElement('p'); lbl.className='field-label'; lbl.textContent=def.label;
+      group.appendChild(lbl);
+    }
+
     const args=[def,group,focusChain,optionSets,register];
     switch(def.type){
-      case 'alpha-full':    buildFullField(...args,true);  break;
-      case 'free-full':     buildFullField(...args,false); break;
-      case 'split':         buildSplitField(...args);      break;
-      case 'address':       buildAddressField(...args);    break;
+      case 'alpha-full':    buildFullField(...args,true);   break;
+      case 'free-full':     buildFullField(...args,false);  break;
+      case 'split':         buildSplitField(...args);       break;
+      case 'address':       buildAddressField(...args);     break;
       case 'city-province': buildCityProvinceField(...args);break;
-      case 'dropdown':      buildDropdownField(...args);   break;
+      case 'dropdown':      buildDropdownField(...args);    break;
       default:
         const warn=document.createElement('p');
         warn.style.cssText='font-size:13px;color:#e05252;padding:8px 0;';
         warn.textContent=`Unknown field type: "${def.type}"`;
         group.appendChild(warn);
     }
+
     const chips=document.createElement('div'); chips.className='chips'; chips.id='chips-'+def.id;
     group.appendChild(chips); container.appendChild(group);
   });
 
-  /* Last field Enter = submit */
   const lastEl=focusChain[focusChain.length-1];
   if(lastEl) lastEl.addEventListener('keydown',e=>{ if(e.key==='Enter') submit(); });
 
@@ -531,13 +617,13 @@ async function init() {
     Object.values(fieldRegistry).forEach(r=>r.clearErrors());
     const err=validateAll();
     if(err){ err.el.classList.add('error'); if(err.el.focus) err.el.focus(); showMsg(err.msg,'err'); return; }
-    Object.entries(fieldRegistry).forEach(([id,reg])=>{
-      const v=reg.getValue(); if(v&&v.replace(/[\|\s\-]/g,'')) addToHistory(reg.storeKey,v);
-    });
+    Object.entries(fieldRegistry).forEach(([id,reg])=>{ const v=reg.getValue(); if(v&&v.replace(/[\|\s\-]/g,'')) addToHistory(reg.storeKey,v); });
     renderAll();
     const parts=(formDef.fields||[]).map(def=>{ const reg=fieldRegistry[def.id]; if(!reg) return null; return(reg.displayValue?reg.displayValue():reg.getValue())||null; }).filter(Boolean);
     showMsg('Saved: '+parts.join(' · '),'ok');
     Object.values(fieldRegistry).forEach(reg=>{ reg.elements.forEach(el=>{ el.value=''; }); });
+    /* Reset floating labels after clear */
+    document.querySelectorAll('.fl-wrap').forEach(w=>w.classList.remove('has-value'));
     if(focusChain[0]) focusChain[0].focus();
   }
 
