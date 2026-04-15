@@ -5,6 +5,16 @@
 
   "fields": [
     {
+      "id":       "booking-for",
+      "label":    "* I want to book an appointment for",
+      "type":     "radio",
+      "required": true,
+      "options": [
+        { "value": "myself",  "label": "Myself" },
+        { "value": "someone", "label": "Someone else or for another user" }
+      ]
+    },
+    {
       "id":       "firstname",
       "label":    "* First name",
       "type":     "alpha-full",
@@ -20,14 +30,12 @@
       "id":          "email",
       "label":       "Email",
       "type":        "free-full",
-      "placeholder": "your@email.com",
       "required":    false
     },
     {
       "id":          "emailconfirm",
       "label":       "Email confirmation",
       "type":        "free-full",
-      "placeholder": "your@email.com",
       "required":    false
     },
     {
@@ -50,6 +58,17 @@
       "type":     "split",
       "pattern":  "AAAA NNNNNN NN",
       "required": false
+    },
+    {
+      "id":       "agreements",
+      "label":    "Agreements",
+      "type":     "checkbox",
+      "required": true,
+      "options": [
+        { "value": "terms",    "label": "* I understand and accept the Terms and Conditions of Use and confirm that I am 14 years of age or older", "required": true },
+        { "value": "privacy",  "label": "* I understand and agree that my personal information may be disclosed in accordance with the Privacy Policy", "required": true },
+        { "value": "marketing","label": "I consent to receiving electronic commercial communications", "required": false }
+      ]
     }
   ],
 
