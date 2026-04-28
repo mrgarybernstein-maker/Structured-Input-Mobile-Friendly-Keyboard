@@ -55,7 +55,7 @@
       "label": "Age",
       "type": "split",
       "required": true,
-      "pattern": "nn"
+      "pattern": "NN"
     },
     {
       "id": "mobile",
