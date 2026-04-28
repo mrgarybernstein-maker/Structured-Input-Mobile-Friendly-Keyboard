@@ -651,9 +651,15 @@ async function init(){
       if(!confirmReg||!sourceReg) continue;
       const confirmVal=confirmReg.getValue();
       const sourceVal=sourceReg.getValue();
-      if(confirmVal&&sourceVal&&confirmVal!==sourceVal){
+      /* If source has a value, confirmation must match */
+      if(sourceVal){
         const el=confirmReg.elements[0];
-        return {el, msg:`${def.label}: does not match — please check both email addresses`};
+        if(!confirmVal){
+          return {el, msg:`${def.label} is required`};
+        }
+        if(confirmVal!==sourceVal){
+          return {el, msg:`${def.label}: does not match — please check both email addresses`};
+        }
       }
     }
     return null;
