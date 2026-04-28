@@ -350,7 +350,27 @@ function buildSplitField(def,container,focusChain,optionSets,register){
       else if(tok.isNum){ if(v.length!==tok.chars||!/^\d+$/.test(v)) return {el,msg:`${def.label}: ${tok.chars} digit${tok.chars>1?'s':''} required here`}; }
     }
     const monthSeg=inputs.find(({tok})=>tok.isMonth); const numSegs=inputs.filter(({tok})=>tok.isNum);
-    if(monthSeg&&numSegs.length>=2){ const mon=monthSeg.el.value.toUpperCase(),day=parseInt(numSegs[0].el.value),yr=parseInt(numSegs[numSegs.length-1].el.value); if(MONTHS.includes(mon)&&!isNaN(day)&&!isNaN(yr)&&yr>1000){ const max=maxDaysInMonth(mon,yr); if(day<1||day>max) return {el:numSegs[0].el,msg:`${mon} ${yr} only has ${max} days`}; } }
+    if(monthSeg&&numSegs.length>=2){
+      const mon=monthSeg.el.value.toUpperCase();
+      const day=parseInt(numSegs[0].el.value);
+      const yr=parseInt(numSegs[numSegs.length-1].el.value);
+      if(MONTHS.includes(mon)&&!isNaN(day)&&!isNaN(yr)&&yr>1000){
+        /* Check days in month */
+        const max=maxDaysInMonth(mon,yr);
+        if(day<1||day>max) return {el:numSegs[0].el,msg:`${mon} ${yr} only has ${max} days`};
+        /* Check date is not in the future — only for fields labelled as date of birth */
+        const lbl=(def.label||'').toLowerCase();
+        const isDOB=lbl.includes('birth')||lbl.includes('dob')||lbl.includes('born')||lbl.includes('birthday');
+        if(isDOB){
+          const entered=new Date(yr, MONTHS.indexOf(mon), day);
+          const today=new Date(); today.setHours(0,0,0,0);
+          if(entered>today) return {el:numSegs[numSegs.length-1].el,msg:`Date of birth cannot be in the future`};
+          /* Also check for unreasonably old dates */
+          const minYear=today.getFullYear()-130;
+          if(yr<minYear) return {el:numSegs[numSegs.length-1].el,msg:`Please check the year — ${yr} seems too far back`};
+        }
+      }
+    }
     return null;
   }
   register(def.id,{ elements:inputs.map(({el})=>el), getValue, setValue, clearErrors:()=>inputs.forEach(({el})=>clearErr(el)), validate, storeKey:'reg_'+def.id, populateFn:setValue });
@@ -643,23 +663,53 @@ async function init(){
       const reg=fieldRegistry[def.id]; if(!reg) continue;
       const err=reg.validate(); if(err) return err;
     }
-    /* Cross-field email confirmation check */
+
+    /* Email confirmation check — two methods:
+       Method 1: explicit confirmOf property in form.json
+       Method 2: smart detection by label name (confirm/confirmation/verify) */
+    const emailFields = (formDef.fields||[]).filter(f=>f.type==='email'||f.type==='free-full');
+
     for(const def of (formDef.fields||[])){
-      if(!def.confirmOf) continue;
-      const confirmReg=fieldRegistry[def.id];
-      const sourceReg=fieldRegistry[def.confirmOf];
-      if(!confirmReg||!sourceReg) continue;
-      const confirmVal=confirmReg.getValue();
+      const reg=fieldRegistry[def.id]; if(!reg) continue;
+
+      /* Method 1: explicit confirmOf */
+      if(def.confirmOf){
+        const sourceReg=fieldRegistry[def.confirmOf];
+        if(!sourceReg) continue;
+        const confirmVal=reg.getValue();
+        const sourceVal=sourceReg.getValue();
+        if(sourceVal){
+          const el=reg.elements[0];
+          if(!confirmVal) return {el, msg:`${def.label} is required`};
+          if(confirmVal!==sourceVal) return {el, msg:`${def.label}: does not match — please check both email addresses`};
+        }
+        continue;
+      }
+
+      /* Method 2: smart label detection — field label contains confirm/confirmation/verify */
+      const lbl=(def.label||'').toLowerCase();
+      const isConfirmLabel=lbl.includes('confirm')||lbl.includes('verification')||lbl.includes('verify')||lbl.includes('re-enter')||lbl.includes('repeat');
+      if(!isConfirmLabel) continue;
+      if(def.type!=='email'&&def.type!=='free-full') continue;
+
+      /* Find the preceding email field */
+      const fields=formDef.fields||[];
+      const myIdx=fields.findIndex(f=>f.id===def.id);
+      let sourceDef=null;
+      for(let i=myIdx-1;i>=0;i--){
+        if(fields[i].type==='email'||fields[i].type==='free-full'){
+          sourceDef=fields[i]; break;
+        }
+      }
+      if(!sourceDef) continue;
+      const sourceReg=fieldRegistry[sourceDef.id]; if(!sourceReg) continue;
+
+      const confirmVal=reg.getValue();
       const sourceVal=sourceReg.getValue();
-      /* If source has a value, confirmation must match */
       if(sourceVal){
-        const el=confirmReg.elements[0];
-        if(!confirmVal){
-          return {el, msg:`${def.label} is required`};
-        }
-        if(confirmVal!==sourceVal){
-          return {el, msg:`${def.label}: does not match — please check both email addresses`};
-        }
+        const el=reg.elements[0];
+        if(!confirmVal) return {el, msg:`${def.label} is required`};
+        if(confirmVal!==sourceVal) return {el, msg:`${def.label}: does not match — please check both email addresses`};
       }
     }
     return null;
