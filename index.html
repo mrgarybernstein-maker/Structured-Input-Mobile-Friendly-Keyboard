@@ -371,12 +371,24 @@ function buildEmailField(def,container,focusChain,optionSets,register){
     autocapitalize:'off',
     autocorrect:'off',
     spellcheck:'false',
-    autocomplete:'email',
+    autocomplete: def.confirmOf ? 'off' : 'email',
     'aria-label':def.label
   });
   const {wrap,update}=makeFloatWrap(inp,def.label);
   container.appendChild(wrap); focusChain.push(inp);
-  inp.addEventListener('input',()=>{ clearErr(inp); });
+
+  inp.addEventListener('input',()=>{
+    clearErr(inp);
+    /* If this is the source field, clear error on confirm field too */
+    if(def.id){
+      const confirmEl=document.querySelector(`[data-confirm-of="${def.id}"]`);
+      if(confirmEl) clearErr(confirmEl);
+    }
+  });
+
+  /* Mark confirm fields so we can find them */
+  if(def.confirmOf) inp.dataset.confirmOf=def.confirmOf;
+
   register(def.id,{
     elements:[inp],
     getValue:()=>inp.value.trim(),
@@ -386,10 +398,18 @@ function buildEmailField(def,container,focusChain,optionSets,register){
       const v=inp.value.trim();
       if(!v&&def.required!==false) return {el:inp,msg:`${def.label} is required`};
       if(v&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return {el:inp,msg:`${def.label}: please enter a valid email address`};
+      /* Confirmation check */
+      if(def.confirmOf){
+        const sourceReg=Object.values(arguments[4]||{}).find ? null : null;
+        /* Find source field value via DOM */
+        const sourceInp=document.querySelector(`input[aria-label]`);
+        /* Use fieldRegistry via closure — checked in validateAll */
+      }
       return null;
     },
     storeKey:'reg_'+def.id,
-    populateFn:v=>{inp.value=v;clearErr(inp);update();}
+    populateFn:v=>{inp.value=v;clearErr(inp);update();},
+    confirmOf: def.confirmOf||null
   });
 }
 
@@ -622,6 +642,19 @@ async function init(){
       if(def.required===false) continue;
       const reg=fieldRegistry[def.id]; if(!reg) continue;
       const err=reg.validate(); if(err) return err;
+    }
+    /* Cross-field email confirmation check */
+    for(const def of (formDef.fields||[])){
+      if(!def.confirmOf) continue;
+      const confirmReg=fieldRegistry[def.id];
+      const sourceReg=fieldRegistry[def.confirmOf];
+      if(!confirmReg||!sourceReg) continue;
+      const confirmVal=confirmReg.getValue();
+      const sourceVal=sourceReg.getValue();
+      if(confirmVal&&sourceVal&&confirmVal!==sourceVal){
+        const el=confirmReg.elements[0];
+        return {el, msg:`${def.label}: does not match — please check both email addresses`};
+      }
     }
     return null;
   }
