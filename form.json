@@ -2,91 +2,146 @@
   "title": "Book an appointment",
   "subtitle": "Please fill in all fields marked with *",
   "submitLabel": "Continue",
-
   "fields": [
     {
-      "id":       "booking-for",
-      "label":    "* I want to book an appointment for",
-      "type":     "radio",
+      "id": "booking-for",
+      "label": "* I want to book an appointment for",
+      "type": "radio",
       "required": true,
       "options": [
-        { "value": "myself",  "label": "Myself" },
-        { "value": "someone", "label": "Someone else or for another user" }
+        {
+          "value": "myself",
+          "label": "Myself"
+        },
+        {
+          "value": "someone",
+          "label": "Someone else or for another user"
+        }
       ]
     },
     {
-      "id":       "firstname",
-      "label":    "* First name",
-      "type":     "alpha-full",
+      "id": "firstname",
+      "label": "* First name",
+      "type": "alpha-full",
       "required": true
     },
     {
-      "id":       "lastname",
-      "label":    "* Last name",
-      "type":     "alpha-full",
+      "id": "lastname",
+      "label": "* Last name",
+      "type": "alpha-full",
       "required": true
     },
     {
-      "id":          "email",
-      "label":       "Email",
-      "type":        "free-full",
-      "required":    false
-    },
-    {
-      "id":          "emailconfirm",
-      "label":       "Email confirmation",
-      "type":        "free-full",
-      "required":    false
-    },
-    {
-      "id":       "dob",
-      "label":    "* Date of birth",
-      "type":     "split",
-      "pattern":  "NN-MMM-NNNN",
-      "required": true
-    },
-    {
-      "id":       "mobile",
-      "label":    "Mobile",
-      "type":     "split",
-      "pattern":  "NNN NNN NNNN",
+      "id": "email",
+      "label": "Email",
+      "type": "email",
       "required": false
     },
     {
-      "id":       "ramq",
-      "label":    "Health Insurance Number (RAMQ)",
-      "type":     "split",
-      "pattern":  "AAAA NNNNNN NN",
+      "id": "emailconfirm",
+      "label": "Email confirmation",
+      "type": "email",
       "required": false
     },
     {
-      "id":       "agreements",
-      "label":    "Agreements",
-      "type":     "checkbox",
+      "id": "dob",
+      "label": "* Date of birth",
+      "type": "split",
+      "required": true,
+      "pattern": "NN-MMM-NNNN"
+    },
+    {
+      "id": "mobile",
+      "label": "Mobile",
+      "type": "split",
+      "required": false,
+      "pattern": "NNN NNN NNNN"
+    },
+    {
+      "id": "ramq",
+      "label": "Health Insurance Number (RAMQ)",
+      "type": "split",
+      "required": false,
+      "pattern": "AAAA NNNNNN NN"
+    },
+    {
+      "id": "agreements",
+      "label": "Agreements",
+      "type": "checkbox",
       "required": true,
       "options": [
-        { "value": "terms",    "label": "* I understand and accept the Terms and Conditions of Use and confirm that I am 14 years of age or older", "required": true },
-        { "value": "privacy",  "label": "* I understand and agree that my personal information may be disclosed in accordance with the Privacy Policy", "required": true },
-        { "value": "marketing","label": "I consent to receiving electronic commercial communications", "required": false }
+        {
+          "value": "terms",
+          "label": "* I understand and accept the Terms and Conditions of Use and confirm that I am 14 years of age or older",
+          "required": true
+        },
+        {
+          "value": "privacy",
+          "label": "* I understand and agree that my personal information may be disclosed in accordance with the Privacy Policy",
+          "required": true
+        },
+        {
+          "value": "marketing",
+          "label": "I consent to receiving electronic commercial communications",
+          "required": false
+        }
       ]
     }
   ],
-
   "optionSets": {
     "provinces": [
-      { "value": "AB", "label": "AB – Alberta" },
-      { "value": "BC", "label": "BC – British Columbia" },
-      { "value": "MB", "label": "MB – Manitoba" },
-      { "value": "NB", "label": "NB – New Brunswick" },
-      { "value": "NL", "label": "NL – Newfoundland & Labrador" },
-      { "value": "NS", "label": "NS – Nova Scotia" },
-      { "value": "NT", "label": "NT – Northwest Territories" },
-      { "value": "NU", "label": "NU – Nunavut" },
-      { "value": "ON", "label": "ON – Ontario" },
-      { "value": "PE", "label": "PE – Prince Edward Island" },
-      { "value": "QC", "label": "QC – Québec" },
-      { "value": "SK", "label": "SK – Saskatchewan" },
-      { "value": "YT", "label": "YT – Yukon" }
+      {
+        "value": "AB",
+        "label": "AB – Alberta"
+      },
+      {
+        "value": "BC",
+        "label": "BC – British Columbia"
+      },
+      {
+        "value": "MB",
+        "label": "MB – Manitoba"
+      },
+      {
+        "value": "NB",
+        "label": "NB – New Brunswick"
+      },
+      {
+        "value": "NL",
+        "label": "NL – Newfoundland & Labrador"
+      },
+      {
+        "value": "NS",
+        "label": "NS – Nova Scotia"
+      },
+      {
+        "value": "NT",
+        "label": "NT – Northwest Territories"
+      },
+      {
+        "value": "NU",
+        "label": "NU – Nunavut"
+      },
+      {
+        "value": "ON",
+        "label": "ON – Ontario"
+      },
+      {
+        "value": "PE",
+        "label": "PE – Prince Edward Island"
+      },
+      {
+        "value": "QC",
+        "label": "QC – Québec"
+      },
+      {
+        "value": "SK",
+        "label": "SK – Saskatchewan"
+      },
+      {
+        "value": "YT",
+        "label": "YT – Yukon"
+      }
     ]
   }
 }
