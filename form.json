@@ -51,6 +51,13 @@
       "pattern": "NN-MMM-NNNN"
     },
     {
+      "id": "age-moj2mcpw",
+      "label": "Age",
+      "type": "split",
+      "required": true,
+      "pattern": "nn"
+    },
+    {
       "id": "mobile",
       "label": "Mobile",
       "type": "split",
