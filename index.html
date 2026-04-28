@@ -310,7 +310,7 @@ function parsePattern(pattern){
   const tokens=[]; let i=0;
   while(i<pattern.length){
     const ch=pattern[i];
-    if(ch==='-'||ch===' '){ tokens.push({kind:'sep',char:ch}); i++; continue; }
+    if(ch==='-'||ch===' '||ch==='.'){ tokens.push({kind:'sep',char:ch}); i++; continue; }
     let run=''; while(i<pattern.length&&pattern[i]===ch){ run+=ch; i++; }
     const isMonth=(ch==='M'&&run.length===3); const isAlpha=ch==='A'||isMonth; const isNum=ch==='N';
     tokens.push({kind:'seg',chars:run.length,isAlpha,isNum,isMonth,placeholder:isMonth?'MMM':run,width:Math.max(46,run.length*22+16)});
@@ -327,7 +327,7 @@ function buildSplitField(def,container,focusChain,optionSets,register){
   const row=document.createElement('div'); row.className='field-row';
   const inputs=[];
   tokens.forEach(tok=>{
-    if(tok.kind==='sep'){ const s=document.createElement('span'); s.className=tok.char==='-'?'sep':'sep-space'; if(tok.char==='-') s.textContent='-'; row.appendChild(s); return; }
+    if(tok.kind==='sep'){ const s=document.createElement('span'); s.className=(tok.char==='-'||tok.char==='.')?'sep':'sep-space'; if(tok.char==='-'||tok.char==='.') s.textContent=tok.char; row.appendChild(s); return; }
     const inp=makeInput('seg',{ type:'text', inputmode:tok.isNum?'numeric':'text', maxlength:tok.chars, placeholder:tok.placeholder, autocomplete:'off', autocorrect:'off', spellcheck:'false', style:`width:${tok.width}px;${(tok.isAlpha||tok.isMonth)?'text-transform:uppercase;':''}` });
     if(tok.isAlpha||tok.isMonth) inp.setAttribute('autocapitalize','characters');
     inputs.push({el:inp,tok}); row.appendChild(inp);
@@ -341,7 +341,7 @@ function buildSplitField(def,container,focusChain,optionSets,register){
     focusChain.push(el);
   });
   function getValue(){ let out='',si=0; tokens.forEach(tok=>{ if(tok.kind==='sep'){out+=tok.char;}else{out+=(inputs[si++]?.el.value||'');} }); return out; }
-  function setValue(val){ const clean=val.replace(/[\s\-]/g,''); let pos=0; inputs.forEach(({el,tok})=>{ el.value=clean.slice(pos,pos+tok.chars); clearErr(el); pos+=tok.chars; }); }
+  function setValue(val){ const clean=val.replace(/[\ \-\.]/g,''); let pos=0; inputs.forEach(({el,tok})=>{ el.value=clean.slice(pos,pos+tok.chars); clearErr(el); pos+=tok.chars; }); }
   function validate(){
     for(let i=0;i<inputs.length;i++){
       const {el,tok}=inputs[i]; const v=el.value.toUpperCase();
@@ -364,13 +364,42 @@ function buildFullField(def,container,focusChain,optionSets,register,alphaOnly){
   register(def.id,{ elements:[inp], getValue:()=>inp.value.trim(), setValue:v=>{inp.value=v;clearErr(inp);update();}, clearErrors:()=>clearErr(inp), validate:()=>{ const v=inp.value.trim(); if(!v) return {el:inp,msg:`${def.label} is required`}; if(alphaOnly&&!/^[a-zA-Z\s'\-]+$/.test(v)) return {el:inp,msg:`${def.label} must contain letters only`}; return null; }, storeKey:'reg_'+def.id, populateFn:v=>{inp.value=v;clearErr(inp);update();} });
 }
 
+function buildEmailField(def,container,focusChain,optionSets,register){
+  const inp=makeInput('seg-full',{
+    type:'email',
+    inputmode:'email',
+    autocapitalize:'off',
+    autocorrect:'off',
+    spellcheck:'false',
+    autocomplete:'email',
+    'aria-label':def.label
+  });
+  const {wrap,update}=makeFloatWrap(inp,def.label);
+  container.appendChild(wrap); focusChain.push(inp);
+  inp.addEventListener('input',()=>{ clearErr(inp); });
+  register(def.id,{
+    elements:[inp],
+    getValue:()=>inp.value.trim(),
+    setValue:v=>{inp.value=v;clearErr(inp);update();},
+    clearErrors:()=>clearErr(inp),
+    validate:()=>{
+      const v=inp.value.trim();
+      if(!v&&def.required!==false) return {el:inp,msg:`${def.label} is required`};
+      if(v&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return {el:inp,msg:`${def.label}: please enter a valid email address`};
+      return null;
+    },
+    storeKey:'reg_'+def.id,
+    populateFn:v=>{inp.value=v;clearErr(inp);update();}
+  });
+}
+
 function buildAddressField(def,container,focusChain,optionSets,register){
   const row1=document.createElement('div'); row1.className='field-row'; row1.style.marginBottom='8px';
   const numInp=makeInput('seg',{type:'text',inputmode:'numeric',maxlength:'6',placeholder:'No.',autocomplete:'off',autocorrect:'off',spellcheck:'false','aria-label':'Street number',style:'width:88px;'});
   const stInp=makeInput('seg',{type:'text',inputmode:'text',autocapitalize:'words',autocorrect:'off',spellcheck:'false',placeholder:'Street name','aria-label':'Street name',style:'flex:1;text-align:left;padding:10px 12px;font-size:16px;'});
   row1.appendChild(numInp); row1.appendChild(stInp);
   const row2=document.createElement('div'); row2.className='field-row';
-  const unitInp=makeInput('seg',{type:'text',inputmode:'text',maxlength:'8',autocapitalize:'characters',autocorrect:'off',spellcheck:'false',placeholder:'Apt / Unit','aria-label':'Unit (optional)',style:'width:110px;text-align:left;padding:10px 10px;font-size:15px;'});
+  const unitInp=makeInput('seg',{type:'text',inputmode:'numeric',maxlength:'8',autocorrect:'off',spellcheck:'false',placeholder:'Apt / Unit','aria-label':'Unit (optional)',style:'width:110px;text-align:left;padding:10px 10px;font-size:15px;'});
   const hint=document.createElement('span'); hint.className='opt-hint'; hint.textContent='optional';
   row2.appendChild(unitInp); row2.appendChild(hint);
   container.appendChild(row1); container.appendChild(row2); focusChain.push(numInp,stInp,unitInp);
@@ -378,7 +407,7 @@ function buildAddressField(def,container,focusChain,optionSets,register){
   numInp.addEventListener('keydown',e=>{ if((e.key==='Tab'||e.key==='Enter')&&numInp.value){e.preventDefault();stInp.focus();} });
   stInp.addEventListener('input',()=>clearErr(stInp));
   stInp.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&stInp.value==='') numInp.focus(); });
-  unitInp.addEventListener('input',()=>clearErr(unitInp));
+  unitInp.addEventListener('input',()=>{ unitInp.value=unitInp.value.replace(/[^0-9]/g,''); clearErr(unitInp); });
   unitInp.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&unitInp.value==='') stInp.focus(); });
   const getValue=()=>`${numInp.value}|${stInp.value.trim()}|${unitInp.value.trim()}`;
   const setValue=val=>{ const p=val.split('|'); numInp.value=p[0]||''; stInp.value=p[1]||''; unitInp.value=p[2]||''; [numInp,stInp,unitInp].forEach(clearErr); };
@@ -542,7 +571,7 @@ async function init(){
   function register(id,obj){ fieldRegistry[id]=obj; }
 
   const container=document.getElementById('form-fields');
-  const floatingTypes=new Set(['alpha-full','free-full','dropdown','city-province']);
+  const floatingTypes=new Set(['alpha-full','free-full','email','dropdown','city-province']);
 
   (formDef.fields||[]).forEach((def,idx)=>{
     if(idx>0){ const hr=document.createElement('hr'); hr.className='divider'; container.appendChild(hr); }
@@ -560,6 +589,7 @@ async function init(){
     switch(def.type){
       case 'alpha-full':    buildFullField(...args,true);    break;
       case 'free-full':     buildFullField(...args,false);   break;
+      case 'email':         buildEmailField(...args);        break;
       case 'split':         buildSplitField(...args);        break;
       case 'address':       buildAddressField(...args);      break;
       case 'city-province': buildCityProvinceField(...args); break;
