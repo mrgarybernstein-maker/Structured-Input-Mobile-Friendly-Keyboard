@@ -337,7 +337,52 @@ function buildSplitField(def,container,focusChain,optionSets,register){
     const nextEl=inputs[idx+1]?.el||null; const prevEl=inputs[idx-1]?.el||null;
     el.addEventListener('input',()=>{ let v=el.value; if((tok.isAlpha||tok.isMonth)&&!tok.isNum) v=v.replace(/[^a-zA-Z]/g,'').toUpperCase(); if(tok.isNum&&!tok.isAlpha) v=v.replace(/\D/g,''); el.value=v; clearErr(el); if(v.length===tok.chars&&nextEl) nextEl.focus(); });
     el.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&el.value===''&&prevEl){e.preventDefault();prevEl.focus();} });
-    if(tok.isMonth){ el.addEventListener('blur',()=>{ const v=el.value.toUpperCase(); if(v.length===3&&!MONTHS.includes(v)){el.classList.add('error');showMsg('Invalid month — use JAN, FEB … DEC','err');} }); el.addEventListener('focus',()=>{ clearErr(el); clearMsg(); }); }
+    if(tok.isMonth){
+      el.addEventListener('blur',()=>{
+        const v=el.value.toUpperCase();
+        if(v.length===3&&!MONTHS.includes(v)){el.classList.add('error');showMsg('Invalid month — use JAN, FEB … DEC','err');}
+      });
+      el.addEventListener('focus',()=>{ clearErr(el); clearMsg(); clearFieldError(def.id); });
+    }
+    /* Year blur — validate full date inline */
+    if(tok.isNum && idx === inputs.length-1){
+      el.addEventListener('blur',()=>{
+        const monthSeg2=inputs.find(({tok:t})=>t.isMonth);
+        const numSegs2=inputs.filter(({tok:t})=>t.isNum);
+        if(!monthSeg2||numSegs2.length<2) return;
+        const mon=monthSeg2.el.value.toUpperCase();
+        const day=parseInt(numSegs2[0].el.value);
+        const yr=parseInt(el.value);
+        if(!MONTHS.includes(mon)||isNaN(day)||isNaN(yr)||yr<1000) return;
+        /* Days in month check */
+        const max=maxDaysInMonth(mon,yr);
+        if(day<1||day>max){
+          numSegs2[0].el.classList.add('error');
+          showFieldError(def.id, `${mon} ${yr} only has ${max} days`);
+          return;
+        }
+        /* Future date check for DOB */
+        const lbl=(def.label||'').toLowerCase();
+        const isDOB=lbl.includes('birth')||lbl.includes('dob')||lbl.includes('born')||lbl.includes('birthday');
+        if(isDOB){
+          const entered=new Date(yr, MONTHS.indexOf(mon), day);
+          const today=new Date(); today.setHours(0,0,0,0);
+          if(entered>today){
+            el.classList.add('error');
+            showFieldError(def.id,'Date of birth cannot be in the future');
+            return;
+          }
+          const minYear=today.getFullYear()-130;
+          if(yr<minYear){
+            el.classList.add('error');
+            showFieldError(def.id,`Please check the year — ${yr} seems too far back`);
+            return;
+          }
+        }
+        clearFieldError(def.id);
+      });
+      el.addEventListener('focus',()=>{ clearErr(el); clearFieldError(def.id); });
+    }
     focusChain.push(el);
   });
   function getValue(){ let out='',si=0; tokens.forEach(tok=>{ if(tok.kind==='sep'){out+=tok.char;}else{out+=(inputs[si++]?.el.value||'');} }); return out; }
@@ -399,10 +444,47 @@ function buildEmailField(def,container,focusChain,optionSets,register){
 
   inp.addEventListener('input',()=>{
     clearErr(inp);
+    clearFieldError(def.id);
     /* If this is the source field, clear error on confirm field too */
     if(def.id){
       const confirmEl=document.querySelector(`[data-confirm-of="${def.id}"]`);
-      if(confirmEl) clearErr(confirmEl);
+      if(confirmEl){ clearErr(confirmEl); clearFieldError(def.confirmOf||''); }
+    }
+  });
+  inp.addEventListener('blur',()=>{
+    /* Inline email confirmation check on blur */
+    if(def.confirmOf){
+      const sourceInp=document.querySelector(`input[aria-label="${(formDef.fields||[]).find(f=>f.id===def.confirmOf)?.label||''}"]`);
+      const sourceVal=sourceInp?sourceInp.value.trim():'';
+      const confirmVal=inp.value.trim();
+      if(sourceVal&&confirmVal&&confirmVal!==sourceVal){
+        inp.classList.add('error');
+        showFieldError(def.id,'Does not match — please check both email addresses');
+      } else if(sourceVal&&confirmVal&&confirmVal===sourceVal){
+        clearErr(inp); clearFieldError(def.id);
+      }
+      return;
+    }
+    /* Smart label detection on blur */
+    const lbl=(def.label||'').toLowerCase();
+    const isConfirmLabel=lbl.includes('confirm')||lbl.includes('verification')||lbl.includes('verify')||lbl.includes('re-enter')||lbl.includes('repeat');
+    if(!isConfirmLabel) return;
+    const fields2=formDef.fields||[];
+    const myIdx=fields2.findIndex(f=>f.id===def.id);
+    for(let i=myIdx-1;i>=0;i--){
+      if(fields2[i].type==='email'||fields2[i].type==='free-full'){
+        const sourceReg2=fieldRegistry[fields2[i].id];
+        if(!sourceReg2) break;
+        const sourceVal=sourceReg2.getValue();
+        const confirmVal=inp.value.trim();
+        if(sourceVal&&confirmVal&&confirmVal!==sourceVal){
+          inp.classList.add('error');
+          showFieldError(def.id,'Does not match — please check both email addresses');
+        } else if(sourceVal&&confirmVal&&confirmVal===sourceVal){
+          clearErr(inp); clearFieldError(def.id);
+        }
+        break;
+      }
     }
   });
 
