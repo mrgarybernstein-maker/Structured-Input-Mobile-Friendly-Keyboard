@@ -302,6 +302,27 @@ function makeFloatWrap(inp,labelText){
 
 /* Helpers */
 function clearErr(el)    { if(el&&el.classList) el.classList.remove('error'); }
+
+function showFieldError(fieldId, msg){
+  let errEl = document.getElementById('ferr-'+fieldId);
+  if(!errEl){
+    errEl = document.createElement('p');
+    errEl.id = 'ferr-'+fieldId;
+    errEl.style.cssText = 'font-size:12px;color:#c0392b;margin-top:5px;line-height:1.4;display:none';
+    /* Insert before chips div so it appears directly under the field */
+    const chipsDiv = document.getElementById('chips-'+fieldId);
+    if(chipsDiv && chipsDiv.parentNode){
+      chipsDiv.parentNode.insertBefore(errEl, chipsDiv);
+    }
+  }
+  errEl.textContent = msg;
+  errEl.style.display = 'block';
+}
+
+function clearFieldError(fieldId){
+  const errEl = document.getElementById('ferr-'+fieldId);
+  if(errEl){ errEl.textContent=''; errEl.style.display='none'; }
+}
 function showMsg(t,type) { const m=document.getElementById('msg'); m.textContent=t; m.className='msg visible '+type; }
 function clearMsg()      { const m=document.getElementById('msg'); m.textContent=''; m.className='msg'; }
 
@@ -808,13 +829,26 @@ async function init(){
     if(err){
       if(err.el&&err.el.focus) err.el.focus();
       else if(err.el) err.el.scrollIntoView({behavior:'smooth',block:'center'});
+      /* Also show inline error if we can find which field this belongs to */
+      if(err.el){
+        /* Find the field id by checking which registry element matches */
+        for(const [id,reg] of Object.entries(fieldRegistry)){
+          if(reg.elements.includes(err.el)){
+            showFieldError(id, err.msg);
+            break;
+          }
+        }
+      }
       showMsg(err.msg,'err'); return;
     }
     Object.entries(fieldRegistry).forEach(([id,reg])=>{ const v=reg.getValue(); if(v&&v.replace(/[\|\s\-,]/g,'')) addToHistory(reg.storeKey,v); });
     renderAll();
     const parts=(formDef.fields||[]).map(def=>{ const reg=fieldRegistry[def.id]; if(!reg) return null; return(reg.displayValue?reg.displayValue():reg.getValue())||null; }).filter(Boolean);
     showMsg('Saved: '+parts.join(' · '),'ok');
-    Object.values(fieldRegistry).forEach(reg=>{ reg.elements.forEach(el=>{ if(el.tagName==='INPUT'||el.tagName==='SELECT') el.value=''; else el.classList.remove('selected','checked'); }); });
+    Object.values(fieldRegistry).forEach(reg=>{
+      reg.elements.forEach(el=>{ if(el.tagName==='INPUT'||el.tagName==='SELECT') el.value=''; else el.classList.remove('selected','checked'); });
+      clearFieldError(reg.storeKey.replace('reg_',''));
+    });
     document.querySelectorAll('.fl-wrap').forEach(w=>w.classList.remove('has-value'));
     if(focusChain[0]) focusChain[0].focus();
   }
