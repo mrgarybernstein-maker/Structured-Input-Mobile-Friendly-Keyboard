@@ -452,39 +452,43 @@ function buildEmailField(def,container,focusChain,optionSets,register){
     }
   });
   inp.addEventListener('blur',()=>{
-    /* Inline email confirmation check on blur */
-    if(def.confirmOf){
-      const sourceInp=document.querySelector(`input[aria-label="${(formDef.fields||[]).find(f=>f.id===def.confirmOf)?.label||''}"]`);
-      const sourceVal=sourceInp?sourceInp.value.trim():'';
-      const confirmVal=inp.value.trim();
-      if(sourceVal&&confirmVal&&confirmVal!==sourceVal){
-        inp.classList.add('error');
-        showFieldError(def.id,'Does not match — please check both email addresses');
-      } else if(sourceVal&&confirmVal&&confirmVal===sourceVal){
-        clearErr(inp); clearFieldError(def.id);
+    const confirmVal = inp.value.trim();
+    if(!confirmVal) return;
+
+    /* Find the source email field using DOM only — no closure dependencies */
+    /* Strategy: find all email/text inputs before this one in the form */
+    const allInputs = Array.from(document.querySelectorAll('input[type="email"], input[type="text"].seg-full'));
+    const myIndex  = allInputs.indexOf(inp);
+    if(myIndex <= 0) return;
+
+    /* Check if this field looks like a confirmation field */
+    const lbl = (def.label||'').toLowerCase();
+    const isConfirm = def.confirmOf ||
+      lbl.includes('confirm') || lbl.includes('verif') ||
+      lbl.includes('re-enter') || lbl.includes('repeat');
+    if(!isConfirm) return;
+
+    /* Find the nearest preceding email-type input */
+    let sourceInp = null;
+    for(let i = myIndex-1; i >= 0; i--){
+      if(allInputs[i].type==='email' || allInputs[i].inputMode==='email'){
+        sourceInp = allInputs[i]; break;
       }
-      return;
+      /* Also accept text inputs that look like email fields */
+      const prevLbl = (allInputs[i].getAttribute('aria-label')||'').toLowerCase();
+      if(prevLbl.includes('email')){ sourceInp = allInputs[i]; break; }
     }
-    /* Smart label detection on blur */
-    const lbl=(def.label||'').toLowerCase();
-    const isConfirmLabel=lbl.includes('confirm')||lbl.includes('verification')||lbl.includes('verify')||lbl.includes('re-enter')||lbl.includes('repeat');
-    if(!isConfirmLabel) return;
-    const fields2=formDef.fields||[];
-    const myIdx=fields2.findIndex(f=>f.id===def.id);
-    for(let i=myIdx-1;i>=0;i--){
-      if(fields2[i].type==='email'||fields2[i].type==='free-full'){
-        const sourceReg2=fieldRegistry[fields2[i].id];
-        if(!sourceReg2) break;
-        const sourceVal=sourceReg2.getValue();
-        const confirmVal=inp.value.trim();
-        if(sourceVal&&confirmVal&&confirmVal!==sourceVal){
-          inp.classList.add('error');
-          showFieldError(def.id,'Does not match — please check both email addresses');
-        } else if(sourceVal&&confirmVal&&confirmVal===sourceVal){
-          clearErr(inp); clearFieldError(def.id);
-        }
-        break;
-      }
+    if(!sourceInp) return;
+
+    const sourceVal = sourceInp.value.trim();
+    if(!sourceVal) return;
+
+    if(confirmVal !== sourceVal){
+      inp.classList.add('error');
+      showFieldError(def.id, 'Does not match — please check both email addresses');
+    } else {
+      clearErr(inp);
+      clearFieldError(def.id);
     }
   });
 
